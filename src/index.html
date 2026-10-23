@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VoiceFlow - Voice Typing Anywhere</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons Library -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* Ambient Floating Shadows */
+    .pill-shadow {
+      box-shadow: 0 12px 32px -4px rgba(17, 94, 69, 0.18), 0 4px 12px -2px rgba(0, 0, 0, 0.08);
+    }
+    .panel-shadow {
+      box-shadow: 0 20px 50px -10px rgba(15, 23, 42, 0.18), 0 4px 16px -2px rgba(15, 23, 42, 0.08);
+    }
+
+    /* Primary Mic Button Gradient & Ring */
+    .mic-btn-gradient {
+      background: linear-gradient(145deg, #257D5E 0%, #165E45 100%);
+      box-shadow: 0 6px 16px rgba(22, 94, 69, 0.32), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    }
+    .mic-btn-gradient:hover {
+      background: linear-gradient(145deg, #298967 0%, #196B4F 100%);
+    }
+    .mic-btn-gradient.recording-pulse {
+      animation: micPulse 2s infinite ease-in-out;
+    }
+    @keyframes micPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(37, 125, 94, 0.4), 0 6px 16px rgba(22, 94, 69, 0.32); }
+      50% { box-shadow: 0 0 0 8px rgba(37, 125, 94, 0.0), 0 6px 16px rgba(22, 94, 69, 0.45); }
+    }
+
+    /* Listening Header Banner Gradient */
+    .listening-banner {
+      background: linear-gradient(105deg, #DCF2E9 0%, #EBF8F2 55%, #DFF3EB 100%);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    /* Waveform Bars */
+    .wave-bar {
+      width: 2.5px;
+      border-radius: 9999px;
+      transition: height 65ms ease-out;
+    }
+    .wave-dark { background-color: #1B694E; }
+    .wave-mid  { background-color: #38A179; }
+    .wave-soft { background-color: #96D7BE; }
+
+    /* Emerald Blinking Text Cursor */
+    @keyframes cursorBlink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    .emerald-caret {
+      display: inline-block;
+      width: 2px;
+      height: 15px;
+      background-color: #1D7557;
+      vertical-align: -2px;
+      margin-left: 1px;
+      animation: cursorBlink 1s infinite;
+    }
+
+    /* Custom Voice Speed Slider */
+    input[type="range"].vf-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 110px;
+      height: 4px;
+      border-radius: 999px;
+      background: linear-gradient(to right, #1D6E53 0%, #1D6E53 33%, #DCE3E0 33%, #DCE3E0 100%);
+      outline: none;
+    }
+    input[type="range"].vf-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      border: 3.5px solid #1D6E53;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+    }
+
+    /* Custom Toggle Switch */
+    .vf-toggle {
+      position: relative;
+      width: 38px;
+      height: 21px;
+      border-radius: 9999px;
+      background-color: #8C9693;
+      transition: background-color 0.2s ease;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .vf-toggle.active {
+      background-color: #216E54;
+    }
+    .vf-toggle::after {
+      content: '';
+      position: absolute;
+      top: 2.5px;
+      left: 2.5px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background-color: #FFFFFF;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .vf-toggle.active::after {
+      transform: translateX(17px);
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 999px; }
+
+    /* Toast Notification */
+    .toast-popup {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #0F172A;
+      color: #FFFFFF;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 9999;
+    }
+    .toast-popup.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body class="p-2">
+
+  <!-- ===================================================================== -->
+  <!-- 1. COLLAPSED MODE (FLOATING PILL - DRAGGABLE OVER ANY WINDOW)         -->
+  <!-- ===================================================================== -->
+  <div id="collapsed-view" data-tauri-drag-region
+       class="w-[304px] h-[54px] bg-white/95 backdrop-blur-md rounded-full pill-shadow border border-slate-100 flex items-center justify-between pl-2 pr-3.5 cursor-move">
+    
+    <!-- Left Mic Button -->
+    <button id="pill-mic-btn" onclick="handleMicToggle()" title="Toggle Voice Typing (Alt+V)"
+            class="w-[38px] h-[38px] rounded-full mic-btn-gradient recording-pulse text-white flex items-center justify-center shrink-0 transition-transform active:scale-95">
+      <i data-lucide="mic" class="w-[18px] h-[18px] stroke-[2]"></i>
+    </button>
+
+    <!-- Status Text -->
+    <span id="pill-status" data-tauri-drag-region
+          class="text-[13.5px] font-medium text-[#334155] tracking-[-0.01em] ml-2.5 mr-auto select-none pointer-events-none">
+      Listening...
+    </span>
+
+    <!-- Multi-Tone Waveform Bars -->
+    <div id="pill-waveform" data-tauri-drag-region class="flex items-center gap-[2.5px] h-6 mr-3 pointer-events-none"></div>
+
+    <!-- Expand Mode Chevron Button -->
+    <button onclick="switchMode(true)" title="Expand VoiceFlow"
+            class="w-6 h-6 rounded-full hover:bg-slate-100 text-[#64748B] hover:text-[#1E293B] flex items-center justify-center transition">
+      <i data-lucide="chevron-down" class="w-4 h-4 stroke-[2]"></i>
+    </button>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- 2. EXPANDED MODE (FULL CONTROL PANEL)                                 -->
+  <!-- ===================================================================== -->
+  <div id="expanded-view"
+       class="hidden w-[364px] h-[676px] bg-white rounded-[24px] panel-shadow border border-slate-200/80 flex-col justify-between p-[18px]">
+    
+    <!-- Top Header Bar (Draggable Region) -->
+    <div data-tauri-drag-region class="flex items-center justify-between pb-1 cursor-move">
+      <div data-tauri-drag-region class="flex items-center gap-2 pointer-events-none">
+        <!-- Custom 5-Bar VoiceFlow Logo SVG -->
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="8.5" width="2.2" height="3" rx="1.1" fill="#38A179"/>
+          <rect x="4.8" y="5" width="2.2" height="10" rx="1.1" fill="#1B694E"/>
+          <rect x="8.6" y="2" width="2.4" height="16" rx="1.2" fill="#257D5E"/>
+          <rect x="12.5" y="6" width="2.2" height="8" rx="1.1" fill="#1B694E"/>
+          <rect x="16.3" y="8.5" width="2.2" height="3" rx="1.1" fill="#38A179"/>
+        </svg>
+        <span data-tauri-drag-region class="font-semibold text-[#1E293B] text-[15.5px] tracking-[-0.015em]">
+          VoiceFlow
+        </span>
+      </div>
+      <button onclick="switchMode(false)" title="Collapse to floating pill"
+              class="w-7 h-7 rounded-full hover:bg-slate-100 text-[#64748B] hover:text-[#0F172A] flex items-center justify-center transition">
+        <i data-lucide="x" class="w-[17px] h-[17px] stroke-[2]"></i>
+      </button>
+    </div>
+
+    <!-- Active Listening Mint Banner -->
+    <div class="listening-banner rounded-[18px] p-3.5 flex items-center gap-3.5">
+      <!-- Outer Subtle White Halo Ring around Mic -->
+      <div class="p-[3px] rounded-full bg-white/60 shadow-sm shrink-0">
+        <button id="panel-mic-btn" onclick="handleMicToggle()" title="Toggle Voice Typing"
+                class="w-[52px] h-[52px] rounded-full mic-btn-gradient recording-pulse text-white flex items-center justify-center transition-transform active:scale-95">
+          <i data-lucide="mic" class="w-[24px] h-[24px] stroke-[1.9]"></i>
+        </button>
+      </div>
+
+      <div class="flex flex-col flex-1 min-w-0">
+        <!-- Mini Circle-Mic Badge + "Listening..." -->
+        <div class="flex items-center gap-1.5 mb-2">
+          <span class="w-[15px] h-[15px] rounded-full bg-[#1E6F53] text-white flex items-center justify-center shrink-0">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            </svg>
+          </span>
+          <span id="panel-status" class="text-[13.5px] font-medium text-[#196249] tracking-[-0.01em]">
+            Listening...
+          </span>
+        </div>
+        <!-- 25-Bar Multi-Tone Waveform -->
+        <div id="panel-waveform" class="flex items-center gap-[3px] h-6"></div>
+      </div>
+    </div>
+
+    <!-- Live Editable Transcript Box -->
+    <div class="border border-[#E2E8F0] rounded-[18px] p-3.5 flex flex-col justify-between h-[142px] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+      <div id="transcript-box" contenteditable="true" spellcheck="false"
+           class="text-[13.5px] text-[#1E293B] leading-[1.55] overflow-y-auto flex-1 outline-none select-text pr-1">Hey, this is a voice to text app.<br>You can speak anywhere on your<br>screen and it will type for you.<span class="emerald-caret"></span></div>
+      
+      <!-- Bottom Quick Action Pills + Right Arrow Send -->
+      <div class="flex items-center justify-between pt-2.5">
+        <div class="flex items-center gap-2">
+          <button onclick="focusTranscript()" title="Edit text"
+                  class="w-[30px] h-[28px] rounded-[9px] bg-[#F1F5F4] hover:bg-[#E2ECE9] text-[#475569] flex items-center justify-center transition">
+            <i data-lucide="file-pen-line" class="w-[14px] h-[14px] stroke-[1.9]"></i>
+          </button>
+          <button onclick="copyTranscript()" title="Copy transcript"
+                  class="w-[30px] h-[28px] rounded-[9px] bg-[#F1F5F4] hover:bg-[#E2ECE9] text-[#475569] flex items-center justify-center transition">
+            <i data-lucide="copy" class="w-[14px] h-[14px] stroke-[1.9]"></i>
+          </button>
+          <button onclick="speakTranscript()" title="Read aloud"
+                  class="w-[30px] h-[28px] rounded-[9px] bg-[#F1F5F4] hover:bg-[#E2ECE9] text-[#475569] flex items-center justify-center transition">
+            <i data-lucide="play" class="w-[14px] h-[14px] stroke-[1.9] ml-0.5"></i>
+          </button>
+        </div>
+
+        <button onclick="sendToActiveWindow()" title="Type into active window"
+                class="w-[30px] h-[30px] rounded-full bg-[#1D6E53] hover:bg-[#165942] text-white flex items-center justify-center shadow-sm transition-transform active:scale-95">
+          <i data-lucide="arrow-right" class="w-[15px] h-[15px] stroke-[2.2]"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Segmented Navigation Bar (Settings | History | More) -->
+    <div class="flex items-center bg-[#F3F6F5] p-1 rounded-full border border-slate-200/60">
+      <button id="tab-btn-settings" onclick="switchTab('settings')"
+              class="flex-1 py-1.5 px-3 rounded-full bg-[#2E7D62] text-white text-[12.5px] font-medium flex items-center justify-center gap-1.5 shadow-sm transition">
+        <i data-lucide="settings" class="w-[13.5px] h-[13.5px] stroke-[2]"></i>
+        <span>Settings</span>
+      </button>
+      <button id="tab-btn-history" onclick="switchTab('history')"
+              class="flex-1 py-1.5 px-3 rounded-full text-[#475569] hover:text-[#0F172A] text-[12.5px] font-medium flex items-center justify-center gap-1.5 transition">
+        <i data-lucide="history" class="w-[13.5px] h-[13.5px] stroke-[2]"></i>
+        <span>History</span>
+      </button>
+      <button id="tab-btn-more" onclick="switchTab('more')"
+              class="flex-1 py-1.5 px-3 rounded-full text-[#475569] hover:text-[#0F172A] text-[12.5px] font-medium flex items-center justify-center gap-1.5 transition">
+        <i data-lucide="ellipsis" class="w-[14px] h-[14px] stroke-[2]"></i>
+        <span>More</span>
+      </button>
+    </div>
+
+    <!-- TAB 1: SETTINGS CARD (Default Active) -->
+    <div id="tab-settings" class="bg-[#F7FAF9] border border-[#E8EFEC] rounded-[18px] p-3.5 space-y-3 text-[12.5px]">
+      <!-- Language -->
+      <div class="flex items-center justify-between">
+        <span class="text-[#334155] font-medium">Language</span>
+        <div class="relative w-[138px]">
+          <select id="language-select"
+                  class="w-full appearance-none bg-white border border-[#E2E8F0] rounded-[10px] pl-3 pr-7 py-1.5 text-[12px] text-[#1E293B] font-medium shadow-[0_1px_2px_rgba(0,0,0,0.03)] focus:outline-none focus:border-[#2E7D62]">
+            <option value="en-US">English (US)</option>
+            <option value="en-GB">English (UK)</option>
+            <option value="es-ES">Spanish (ES)</option>
+            <option value="fr-FR">French (FR)</option>
+            <option value="de-DE">German (DE)</option>
+            <option value="hi-IN">Hindi (IN)</option>
+            <option value="ja-JP">Japanese (JP)</option>
+          </select>
+          <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+        </div>
+      </div>
+
+      <!-- Voice -->
+      <div class="flex items-center justify-between">
+        <span class="text-[#334155] font-medium">Voice</span>
+        <div class="relative w-[138px]">
+          <select id="voice-select"
+                  class="w-full appearance-none bg-white border border-[#E2E8F0] rounded-[10px] pl-3 pr-7 py-1.5 text-[12px] text-[#1E293B] font-medium shadow-[0_1px_2px_rgba(0,0,0,0.03)] focus:outline-none focus:border-[#2E7D62]">
+            <option value="Jenny">Jenny (Female)</option>
+            <option value="Aria">Aria (Female)</option>
+            <option value="Guy">Guy (Male)</option>
+            <option value="Davis">Davis (Male)</option>
+          </select>
+          <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+        </div>
+      </div>
+
+      <!-- Voice Speed -->
+      <div class="flex items-center justify-between pt-0.5">
+        <span class="text-[#334155] font-medium">Voice Speed</span>
+        <div class="flex items-center gap-2.5 w-[138px] justify-end">
+          <input id="speed-range" type="range" min="0.5" max="2.0" step="0.1" value="1.0"
+                 class="vf-slider" oninput="updateSpeedSlider(this)" />
+          <span id="speed-val" class="text-[12px] font-medium text-[#334155] w-7 text-right">1.0x</span>
+        </div>
+      </div>
+
+      <!-- Auto Punctuation -->
+      <div class="flex items-center justify-between pt-0.5">
+        <span class="text-[#334155] font-medium">Auto Punctuation</span>
+        <div id="toggle-punct" onclick="toggleSwitch(this)" class="vf-toggle active" data-enabled="true"></div>
+      </div>
+
+      <!-- Show Notifications -->
+      <div class="flex items-center justify-between">
+        <span class="text-[#334155] font-medium">Show Notifications</span>
+        <div id="toggle-notify" onclick="toggleSwitch(this)" class="vf-toggle active" data-enabled="true"></div>
+      </div>
+
+      <!-- Start on System Boot -->
+      <div class="flex items-center justify-between">
+        <span class="text-[#334155] font-medium">Start on System Boot</span>
+        <div id="toggle-boot" onclick="toggleAutostart(this)" class="vf-toggle" data-enabled="false"></div>
+      </div>
+    </div>
+
+    <!-- TAB 2: HISTORY LIST (Hidden by default) -->
+    <div id="tab-history" class="hidden bg-[#F7FAF9] border border-[#E8EFEC] rounded-[18px] p-3 h-[212px] overflow-y-auto space-y-2 text-[12px]">
+      <div id="history-items" class="space-y-2">
+        <div class="p-2.5 rounded-xl bg-white border border-slate-200/70 text-slate-600 flex items-start justify-between gap-2">
+          <span class="line-clamp-2">Hey, this is a voice to text app. You can speak anywhere on your screen and it will type for you.</span>
+          <button onclick="navigator.clipboard.writeText(this.previousElementSibling.innerText)" class="text-slate-400 hover:text-[#1D6E53] shrink-0">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: MORE / GEMINI LIVE CONFIG (Hidden by default) -->
+    <div id="tab-more" class="hidden bg-[#F7FAF9] border border-[#E8EFEC] rounded-[18px] p-3.5 h-[212px] space-y-3 text-[12.5px]">
+      <div>
+        <label class="block text-[#334155] font-medium mb-1">Gemini Live API Key</label>
+        <input id="api-key" type="password" placeholder="Paste AIzaSy... key here"
+               onchange="localStorage.setItem('VF_API_KEY', this.value)"
+               class="w-full bg-white border border-[#E2E8F0] rounded-[10px] px-3 py-1.5 text-[12px] text-[#1E293B] focus:outline-none focus:border-[#2E7D62]" />
+      </div>
+      <div class="flex items-center justify-between pt-1">
+        <span class="text-[#334155] font-medium">Direct OS Cursor Typing</span>
+        <div id="toggle-direct" onclick="toggleSwitch(this)" class="vf-toggle active" data-enabled="true"></div>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-[#334155] font-medium">Global Shortcut</span>
+        <span class="font-mono text-[11px] bg-white border border-slate-200 rounded px-2 py-0.5 font-semibold text-slate-700">Alt + V</span>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-[#334155] font-medium">Translate Target</span>
+        <select id="translate-lang" class="bg-white border border-[#E2E8F0] rounded-[10px] px-2.5 py-1 text-[12px] text-[#1E293B]">
+          <option value="Spanish">Spanish</option>
+          <option value="French">French</option>
+          <option value="German">German</option>
+          <option value="Japanese">Japanese</option>
+          <option value="Hindi">Hindi</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Bottom 4-Icon Action Dock (Copy | Clear | Translate | Settings) -->
+    <div class="bg-[#F4F7F6] border border-[#E8EFEC] rounded-[16px] py-2 px-3 grid grid-cols-4 text-[11.5px] font-medium text-[#475569]">
+      <button onclick="copyTranscript()" class="hover:text-[#1D6E53] flex flex-col items-center gap-1 transition">
+        <i data-lucide="copy" class="w-[16px] h-[16px] stroke-[1.8]"></i>
+        <span>Copy</span>
+      </button>
+      <button onclick="clearTranscript()" class="hover:text-rose-600 flex flex-col items-center gap-1 transition">
+        <i data-lucide="trash-2" class="w-[16px] h-[16px] stroke-[1.8]"></i>
+        <span>Clear</span>
+      </button>
+      <button onclick="translateTranscript()" class="hover:text-[#1D6E53] flex flex-col items-center gap-1 transition">
+        <i data-lucide="languages" class="w-[16px] h-[16px] stroke-[1.8]"></i>
+        <span>Translate</span>
+      </button>
+      <button onclick="switchTab('settings')" class="hover:text-[#1D6E53] flex flex-col items-center gap-1 transition">
+        <i data-lucide="settings" class="w-[16px] h-[16px] stroke-[1.8]"></i>
+        <span>Settings</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast-popup">Copied to clipboard</div>
+
+  <!-- Audio Streaming & Logic Script -->
+  <script type="module">
+    import { VoiceEngine } from './geminiLive.js';
+
+    // Render Lucide vector icons
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+
+    const tauriCore = window.__TAURI__?.core;
+    const tauriEvent = window.__TAURI__?.event;
+
+    // Toast helper
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      if (!t) return;
+      t.innerText = msg;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 2000);
+    }
+    window.showToast = showToast;
+
+    // =========================================================================
+    // UNIVERSAL FLAWLESS WINDOW DRAG FIX
+    // =========================================================================
+    // Intercepts mousedown on the floating pill or the top header and calls
+    // native window.start_dragging() so dragging works 100% of the time!
+    window.addEventListener("mousedown", (e) => {
+      if (e.button !== 0) return; // Only left mouse button
+
+      // Do NOT drag if clicking on interactive elements
+      if (e.target.closest("button, select, input, textarea, [contenteditable='true']")) {
+        return;
+      }
+
+      // If clicked on collapsed view, drag region, or expanded top bar
+      const isDragTarget = 
+        e.target.closest("#collapsed-view") ||
+        e.target.closest("[data-tauri-drag-region]") ||
+        e.target.closest(".cursor-move");
+
+      if (isDragTarget && tauriCore) {
+        tauriCore.invoke("start_dragging").catch(() => {});
+      }
+    });
+
+    let isListening = false;
+    let transcriptText = "Hey, this is a voice to text app.\nYou can speak anywhere on your\nscreen and it will type for you.";
+
+    // Restore saved API key
+    const savedKey = localStorage.getItem("VF_API_KEY");
+    if (savedKey) document.getElementById("api-key").value = savedKey;
+
+    // Waveform pattern definitions matching the reference image
+    const pillHeights = [4, 6, 4, 11, 18, 9, 14, 21, 10, 15, 7, 11, 5, 8, 4, 4];
+    const panelHeights = [4, 5, 4, 7, 4, 9, 6, 17, 10, 14, 9, 19, 12, 23, 8, 15, 19, 11, 13, 6, 8, 5, 7, 4, 4];
+
+    function buildWaveform(containerId, heights) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.innerHTML = "";
+      heights.forEach((h) => {
+        const bar = document.createElement("div");
+        const tone = h >= 14 ? "wave-dark" : (h >= 8 ? "wave-mid" : "wave-soft");
+        bar.className = `wave-bar ${tone}`;
+        bar.style.height = `${h}px`;
+        bar.dataset.baseHeight = h;
+        container.appendChild(bar);
+      });
+    }
+    buildWaveform("pill-waveform", pillHeights);
+    buildWaveform("panel-waveform", panelHeights);
+
+    // Dynamic Waveform Audio Animator
+    function animateWavebars(levels) {
+      const bars = document.querySelectorAll(".wave-bar");
+      bars.forEach((bar, idx) => {
+        const base = parseFloat(bar.dataset.baseHeight || 6);
+        const audioVal = levels[idx % levels.length] || 0.1;
+        const newHeight = Math.max(3, Math.min(26, Math.round(base * 0.35 + audioVal * 24)));
+        bar.style.height = `${newHeight}px`;
+      });
+    }
+
+    // Voice Engine Integration (Gemini Live API + Fallback)
+    const voiceEngine = new VoiceEngine({
+      apiKey: savedKey || '',
+      model: 'gemini-3.5-transcribe-live',
+      language: document.getElementById('language-select')?.value || 'en-US',
+
+      onStatusChange: (status) => {
+        const isLive = status === 'Listening...';
+        isListening = isLive;
+        document.getElementById("pill-status").innerText = status;
+        document.getElementById("panel-status").innerText = status;
+        document.getElementById("pill-mic-btn").classList.toggle("recording-pulse", isLive);
+        document.getElementById("panel-mic-btn").classList.toggle("recording-pulse", isLive);
+      },
+
+      onAudioLevel: (levels) => {
+        animateWavebars(levels);
+      },
+
+      onInterimText: (interim) => {
+        const box = document.getElementById("transcript-box");
+        if (box) {
+          box.innerHTML = `${transcriptText.replace(/\n/g, "<br>")} <span class="italic text-slate-400">${interim}</span><span class="emerald-caret"></span>`;
+          box.scrollTop = box.scrollHeight;
+        }
+      },
+
+      onFinalText: async (finalText) => {
+        if (!finalText || !finalText.trim()) return;
+        const autoPunct = document.getElementById("toggle-punct")?.dataset.enabled === "true";
+        let text = finalText.trim();
+        if (autoPunct && !/[.!?]$/.test(text)) text += '.';
+
+        transcriptText += (transcriptText ? ' ' : '') + text;
+        renderTranscript();
+        addHistoryItem(text);
+
+        // Direct OS Cursor Typing
+        const directType = document.getElementById("toggle-direct")?.dataset.enabled === "true";
+        if (directType && tauriCore) {
+          try {
+            await tauriCore.invoke("inject_text", { text: ` ${text}` });
+          } catch (_) {}
+        }
+
+        const notify = document.getElementById("toggle-notify")?.dataset.enabled === "true";
+        if (notify) showToast(`Typed: "${text.slice(0, 24)}..."`);
+      },
+
+      onError: (err) => {
+        showToast(err);
+      }
+    });
+
+    window.updateSpeedSlider = function(slider) {
+      const min = parseFloat(slider.min);
+      const max = parseFloat(slider.max);
+      const val = parseFloat(slider.value);
+      const pct = ((val - min) / (max - min)) * 100;
+      slider.style.background = `linear-gradient(to right, #1D6E53 0%, #1D6E53 ${pct}%, #DCE3E0 ${pct}%, #DCE3E0 100%)`;
+      document.getElementById("speed-val").innerText = val.toFixed(1) + "x";
+    };
+
+    window.toggleSwitch = function(el) {
+      const enabled = el.dataset.enabled !== "true";
+      el.dataset.enabled = enabled ? "true" : "false";
+      el.classList.toggle("active", enabled);
+    };
+
+    window.toggleAutostart = async function(el) {
+      window.toggleSwitch(el);
+      const enabled = el.dataset.enabled === "true";
+      if (tauriCore) {
+        try { await tauriCore.invoke("set_autostart", { enabled }); } catch (_) {}
+      }
+    };
+
+    window.switchTab = function(tab) {
+      ["settings", "history", "more"].forEach((t) => {
+        const content = document.getElementById(`tab-${t}`);
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const active = t === tab;
+        if (content) content.classList.toggle("hidden", !active);
+        if (btn) {
+          btn.className = active
+            ? "flex-1 py-1.5 px-3 rounded-full bg-[#2E7D62] text-white text-[12.5px] font-medium flex items-center justify-center gap-1.5 shadow-sm transition"
+            : "flex-1 py-1.5 px-3 rounded-full text-[#475569] hover:text-[#0F172A] text-[12.5px] font-medium flex items-center justify-center gap-1.5 transition";
+        }
+      });
+      if (window.lucide) window.lucide.createIcons();
+    };
+
+    window.switchMode = async function(expanded) {
+      if (tauriCore) {
+        await tauriCore.invoke("set_window_mode", { expanded });
+      }
+      document.getElementById("collapsed-view").classList.toggle("hidden", expanded);
+      const exp = document.getElementById("expanded-view");
+      exp.classList.toggle("hidden", !expanded);
+      exp.classList.toggle("flex", expanded);
+      if (window.lucide) window.lucide.createIcons();
+    };
+
+    window.handleMicToggle = function() {
+      const key = document.getElementById("api-key").value.trim() || localStorage.getItem("VF_API_KEY") || "";
+      if (key) {
+        voiceEngine.setApiKey(key);
+        localStorage.setItem("VF_API_KEY", key);
+      }
+      voiceEngine.setLanguage(document.getElementById("language-select")?.value || 'en-US');
+      voiceEngine.toggle();
+    };
+
+    function renderTranscript() {
+      const box = document.getElementById("transcript-box");
+      if (box) {
+        box.innerHTML = `${transcriptText.replace(/\n/g, "<br>")}<span class="emerald-caret"></span>`;
+        box.scrollTop = box.scrollHeight;
+      }
+    }
+
+    function addHistoryItem(text) {
+      const container = document.getElementById("history-items");
+      if (!container) return;
+      const card = document.createElement("div");
+      card.className = "p-2.5 rounded-xl bg-white border border-slate-200/70 text-slate-600 flex items-start justify-between gap-2";
+      card.innerHTML = `
+        <span class="line-clamp-2">${text}</span>
+        <button onclick="navigator.clipboard.writeText(this.previousElementSibling.innerText); showToast('Copied from history');" class="text-slate-400 hover:text-[#1D6E53] shrink-0">
+          <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+        </button>
+      `;
+      container.prepend(card);
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    window.focusTranscript = function() {
+      document.getElementById("transcript-box")?.focus();
+    };
+
+    window.copyTranscript = function() {
+      const clean = document.getElementById("transcript-box")?.innerText || "";
+      navigator.clipboard.writeText(clean);
+      showToast("Copied to clipboard");
+    };
+
+    window.clearTranscript = function() {
+      transcriptText = "";
+      renderTranscript();
+      showToast("Cleared transcript");
+    };
+
+    window.speakTranscript = function() {
+      const clean = document.getElementById("transcript-box")?.innerText || "";
+      if (!clean.trim()) return;
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(clean);
+      utter.rate = parseFloat(document.getElementById("speed-range").value);
+      window.speechSynthesis.speak(utter);
+      showToast("Reading aloud...");
+    };
+
+    window.sendToActiveWindow = async function() {
+      const clean = document.getElementById("transcript-box")?.innerText || "";
+      if (clean.trim() && tauriCore) {
+        await tauriCore.invoke("inject_text", { text: clean });
+        showToast("Typed into active window!");
+      }
+    };
+
+    window.translateTranscript = async function() {
+      const clean = document.getElementById("transcript-box")?.innerText.trim() || "";
+      const apiKey = document.getElementById("api-key").value.trim() || localStorage.getItem("VF_API_KEY");
+      const targetLang = document.getElementById("translate-lang").value;
+      if (!clean || !apiKey) {
+        window.switchTab("more");
+        showToast("Enter Gemini API key to translate");
+        return;
+      }
+      document.getElementById("panel-status").innerText = `Translating to ${targetLang}...`;
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `Translate the following text into ${targetLang}. Return ONLY the translated text without commentary:\n\n${clean}` }] }]
+          })
+        });
+        const data = await res.json();
+        const translated = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (translated) {
+          transcriptText = translated.trim();
+          renderTranscript();
+          showToast(`Translated to ${targetLang}`);
+        }
+      } catch (err) {
+        showToast("Translation error");
+      } finally {
+        document.getElementById("panel-status").innerText = isListening ? "Listening..." : "Ready";
+      }
+    };
+
+    // Global shortcut Alt+V listener from Rust
+    if (tauriEvent) {
+      tauriEvent.listen("toggle-listening", () => {
+        window.handleMicToggle();
+      });
+    }
+
+    // Keyboard shortcuts
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        window.switchMode(false);
+      } else if (e.key === "Enter" && e.ctrlKey) {
+        window.sendToActiveWindow();
+      }
+    });
+  </script>
+</body>
+</html>
