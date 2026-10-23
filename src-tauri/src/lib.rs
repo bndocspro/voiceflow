@@ -74,38 +74,41 @@ fn type_text(text: String, restore_target: bool) -> Result<(), String> {
             unsafe {
                 SetForegroundWindow(target_hwnd);
             }
-            thread::sleep(Duration::from_millis(30));
+            thread::sleep(Duration::from_millis(15));
         }
 
-        // Convert characters to UTF-16 and send Unicode keyboard events
-        for ch in text.encode_utf16() {
-            let mut inputs = [
-                INPUT {
-                    r#type: INPUT_KEYBOARD,
-                    Anonymous: INPUT_0 {
-                        ki: KEYBDINPUT {
-                            wVk: 0,
-                            wScan: ch,
-                            dwFlags: KEYEVENTF_UNICODE,
-                            time: 0,
-                            dwExtraInfo: 0,
-                        },
-                    },
-                },
-                INPUT {
-                    r#type: INPUT_KEYBOARD,
-                    Anonymous: INPUT_0 {
-                        ki: KEYBDINPUT {
-                            wVk: 0,
-                            wScan: ch,
-                            dwFlags: KEYEVENTF_UNICODE | KEYEVENTF_KEYUP,
-                            time: 0,
-                            dwExtraInfo: 0,
-                        },
-                    },
-                },
-            ];
+        // Batch all unicode keyboard inputs together into a single atomic SendInput call!
+        // This delivers instant, zero-delay real-time typing across all Windows apps.
+        let mut inputs: Vec<INPUT> = Vec::with_capacity(text.encode_utf16().count() * 2);
 
+        for ch in text.encode_utf16() {
+            inputs.push(INPUT {
+                r#type: INPUT_KEYBOARD,
+                Anonymous: INPUT_0 {
+                    ki: KEYBDINPUT {
+                        wVk: 0,
+                        wScan: ch,
+                        dwFlags: KEYEVENTF_UNICODE,
+                        time: 0,
+                        dwExtraInfo: 0,
+                    },
+                },
+            });
+            inputs.push(INPUT {
+                r#type: INPUT_KEYBOARD,
+                Anonymous: INPUT_0 {
+                    ki: KEYBDINPUT {
+                        wVk: 0,
+                        wScan: ch,
+                        dwFlags: KEYEVENTF_UNICODE | KEYEVENTF_KEYUP,
+                        time: 0,
+                        dwExtraInfo: 0,
+                    },
+                },
+            });
+        }
+
+        if !inputs.is_empty() {
             unsafe {
                 SendInput(
                     inputs.len() as u32,
@@ -113,7 +116,6 @@ fn type_text(text: String, restore_target: bool) -> Result<(), String> {
                     std::mem::size_of::<INPUT>() as i32,
                 );
             }
-            thread::sleep(Duration::from_micros(600));
         }
         Ok(())
     }
@@ -210,15 +212,34 @@ fn set_window_mode(
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.set_resizable(true);
         if is_expanded {
+            let _ = window.set_min_size(Some(tauri::LogicalSize::new(280.0, 420.0)));
+            let _ = window.set_max_size(None::<tauri::LogicalSize<f64>>);
             let _ = window.set_size(tauri::LogicalSize::new(380.0, 710.0));
             let _ = window.set_always_on_top(true);
         } else {
+            let _ = window.set_min_size(Some(tauri::LogicalSize::new(200.0, 52.0)));
+            let _ = window.set_max_size(None::<tauri::LogicalSize<f64>>);
             let _ = window.set_size(tauri::LogicalSize::new(320.0, 70.0));
             let _ = window.set_always_on_top(true);
         }
     }
     Ok(())
 }
+
+/// Resize the window directly by delta (for custom resize grips)
+#[tauri::command]
+fn resize_window_by(app: AppHandle, delta_x: f64, delta_y: f64) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("main") {
+        if let Ok(size) = window.inner_size() {
+            let scale = window.scale_factor().unwrap_or(1.0);
+            let new_w = (size.width as f64 + delta_x * scale).max(200.0);
+            let new_h = (size.height as f64 + delta_y * scale).max(52.0);
+            let _ = window.set_size(tauri::PhysicalSize::new(new_w as u32, new_h as u32));
+        }
+    }
+    Ok(())
+}
+
 
 /// Toggle voice listening state
 #[tauri::command]
@@ -335,6 +356,7 @@ pub fn run() {
             backspace,
             get_target_window_title,
             set_window_mode,
+            resize_window_by,
             toggle_listening,
             set_autostart,
             register_shortcut,

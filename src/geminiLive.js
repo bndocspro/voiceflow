@@ -246,7 +246,8 @@ export class VoiceEngine {
     source.connect(this.analyser);
 
     // ScriptProcessor to stream PCM chunks if using Gemini Live
-    const bufferSize = 2048; // ~128ms chunks at 16kHz
+    // 1024 samples = ~64ms chunks at 16kHz for ultra low-latency real-time voice streaming
+    const bufferSize = 1024;
     this.processor = this.audioContext.createScriptProcessor(bufferSize, 1, 1);
 
     this.processor.onaudioprocess = (e) => {
