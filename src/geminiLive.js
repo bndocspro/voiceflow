@@ -33,6 +33,7 @@ export class VoiceEngine {
     this.speechRecognition = null;
     this.visualizerFrame = null;
     this.useWebSpeech = false;
+    this.lastProcessedFinalIndex = 0;
   }
 
   setApiKey(key) {
@@ -121,13 +122,10 @@ export class VoiceEngine {
             this.onInterimText(serverContent.interimInputTranscription.text);
           }
 
-          // Finalized transcription
+          // Finalized transcription (Mutually exclusive to prevent double dispatch)
           if (serverContent.inputTranscription?.text) {
             this.onFinalText(serverContent.inputTranscription.text);
-          }
-
-          // If model turn parts contain text (e.g. gemini-3.8-live text modality)
-          if (serverContent.modelTurn?.parts) {
+          } else if (serverContent.modelTurn?.parts) {
             for (const part of serverContent.modelTurn.parts) {
               if (part.text) {
                 this.onFinalText(part.text);
@@ -162,6 +160,7 @@ export class VoiceEngine {
 
     await this.initMicrophone();
 
+    this.lastProcessedFinalIndex = 0;
     this.speechRecognition = new SpeechRecognition();
     this.speechRecognition.continuous = true;
     this.speechRecognition.interimResults = true;
@@ -169,29 +168,29 @@ export class VoiceEngine {
 
     this.speechRecognition.onstart = () => {
       this.isListening = true;
+      this.lastProcessedFinalIndex = 0;
       this.onStatusChange('Listening...');
       this.startVisualizer();
     };
 
     this.speechRecognition.onresult = (event) => {
       let interim = '';
-      let final = '';
 
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          final += transcript;
+      for (let i = this.lastProcessedFinalIndex; i < event.results.length; ++i) {
+        const item = event.results[i];
+        if (item.isFinal) {
+          const phrase = item[0]?.transcript?.trim();
+          if (phrase && i >= this.lastProcessedFinalIndex) {
+            this.lastProcessedFinalIndex = i + 1;
+            this.onFinalText(phrase);
+          }
         } else {
-          interim += transcript;
+          interim += item[0]?.transcript || '';
         }
       }
 
-      if (interim) {
-        this.onInterimText(interim);
-      }
-
-      if (final) {
-        this.onFinalText(final);
+      if (interim.trim()) {
+        this.onInterimText(interim.trim());
       }
     };
 
@@ -203,6 +202,7 @@ export class VoiceEngine {
     };
 
     this.speechRecognition.onend = () => {
+      this.lastProcessedFinalIndex = 0;
       // Auto-restart if user still wants to listen
       if (this.isListening && this.useWebSpeech) {
         try {
@@ -320,6 +320,7 @@ export class VoiceEngine {
 
   stop() {
     this.isListening = false;
+    this.lastProcessedFinalIndex = 0;
     this.onStatusChange('Ready');
 
     if (this.visualizerFrame) {

@@ -35,26 +35,62 @@
       box-shadow: 0 20px 50px -10px rgba(15, 23, 42, 0.18), 0 4px 16px -2px rgba(15, 23, 42, 0.08);
     }
 
-    /* Primary Mic Button Gradient & Ring */
-    .mic-btn-gradient {
-      background: linear-gradient(145deg, #257D5E 0%, #165E45 100%);
-      box-shadow: 0 6px 16px rgba(22, 94, 69, 0.32), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    /* Primary Mic Button Idle & Active State Styling */
+    .mic-btn-idle {
+      background: linear-gradient(145deg, #64748B 0%, #475569 100%) !important;
+      box-shadow: 0 4px 12px rgba(71, 85, 105, 0.28), inset 0 1px 1px rgba(255, 255, 255, 0.2) !important;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .mic-btn-gradient:hover {
-      background: linear-gradient(145deg, #298967 0%, #196B4F 100%);
+    .mic-btn-idle:hover {
+      background: linear-gradient(145deg, #475569 0%, #334155 100%) !important;
+      box-shadow: 0 6px 16px rgba(51, 65, 85, 0.35) !important;
     }
-    .mic-btn-gradient.recording-pulse {
-      animation: micPulse 2s infinite ease-in-out;
+
+    .mic-btn-connecting {
+      background: linear-gradient(145deg, #F59E0B 0%, #D97706 100%) !important;
+      box-shadow: 0 4px 14px rgba(217, 119, 6, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.3) !important;
+      animation: micConnectingGlow 1.2s infinite ease-in-out;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
+    @keyframes micConnectingGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6), 0 4px 14px rgba(217, 119, 6, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0.0), 0 4px 18px rgba(217, 119, 6, 0.55); }
+    }
+
+    .mic-btn-active {
+      background: linear-gradient(145deg, #257D5E 0%, #165E45 100%) !important;
+      box-shadow: 0 6px 18px rgba(22, 94, 69, 0.42), inset 0 1px 1px rgba(255, 255, 255, 0.35) !important;
+      animation: micPulse 1.8s infinite ease-in-out;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .mic-btn-active:hover {
+      background: linear-gradient(145deg, #2D8E6C 0%, #1B694E 100%) !important;
+    }
+
     @keyframes micPulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(37, 125, 94, 0.4), 0 6px 16px rgba(22, 94, 69, 0.32); }
-      50% { box-shadow: 0 0 0 8px rgba(37, 125, 94, 0.0), 0 6px 16px rgba(22, 94, 69, 0.45); }
+      0%, 100% { box-shadow: 0 0 0 0 rgba(37, 125, 94, 0.5), 0 6px 18px rgba(22, 94, 69, 0.38); }
+      50% { box-shadow: 0 0 0 9px rgba(37, 125, 94, 0.0), 0 6px 22px rgba(22, 94, 69, 0.52); }
     }
 
     /* Listening Header Banner Gradient */
     .listening-banner {
       background: linear-gradient(105deg, #DCF2E9 0%, #EBF8F2 55%, #DFF3EB 100%);
       border: 1px solid rgba(16, 185, 129, 0.2);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .listening-banner.idle-banner {
+      background: #F8FAFC !important;
+      border-color: #E2E8F0 !important;
+    }
+    .listening-banner.idle-banner #panel-status {
+      color: #64748B !important;
+    }
+    .listening-banner.connecting-banner {
+      background: linear-gradient(105deg, #FEF3C7 0%, #FFFBEB 55%, #FEF3C7 100%) !important;
+      border-color: rgba(245, 158, 11, 0.3) !important;
+    }
+    .listening-banner.connecting-banner #panel-status {
+      color: #B45309 !important;
     }
 
     /* Waveform Bars */
@@ -162,6 +198,96 @@
       transform: translateX(-50%) translateY(0);
     }
 
+    /* Dark Mode Theme Tokens */
+    body.dark {
+      color: #F1F5F9;
+    }
+    body.dark #collapsed-view {
+      background: rgba(15, 23, 42, 0.92);
+      border-color: rgba(51, 65, 85, 0.6);
+      box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
+    }
+    body.dark #collapsed-view #pill-status {
+      color: #E2E8F0;
+    }
+    body.dark #expanded-view {
+      background: #0F172A;
+      border-color: rgba(51, 65, 85, 0.7);
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7);
+    }
+    body.dark .mic-btn-idle {
+      background: linear-gradient(145deg, #475569 0%, #334155 100%) !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
+    }
+    body.dark .mic-btn-idle:hover {
+      background: linear-gradient(145deg, #64748B 0%, #475569 100%) !important;
+    }
+    body.dark .listening-banner {
+      background: linear-gradient(105deg, #064E3B 0%, #0F3B2C 55%, #064E3B 100%);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    body.dark .listening-banner.idle-banner {
+      background: #131E30 !important;
+      border-color: #334155 !important;
+    }
+    body.dark .listening-banner.idle-banner #panel-status {
+      color: #94A3B8 !important;
+    }
+    body.dark .listening-banner.connecting-banner {
+      background: linear-gradient(105deg, #451A03 0%, #78350F 55%, #451A03 100%) !important;
+      border-color: rgba(245, 158, 11, 0.4) !important;
+    }
+    body.dark .listening-banner.connecting-banner #panel-status {
+      color: #FDE68A !important;
+    }
+    body.dark #panel-status {
+      color: #A7F3D0;
+    }
+    body.dark #transcript-box {
+      color: #F8FAFC;
+      background: #1E293B;
+      border-color: #334155;
+    }
+    body.dark .bg-white {
+      background-color: #1E293B !important;
+    }
+    body.dark .bg-\[\#F7FAF9\] {
+      background-color: #131E30 !important;
+      border-color: #334155 !important;
+    }
+    body.dark .bg-\[\#F4F7F6\], body.dark .bg-\[\#F3F6F5\], body.dark .bg-\[\#F1F5F4\] {
+      background-color: #1E293B !important;
+      border-color: #334155 !important;
+    }
+    body.dark .text-\[\#334155\], body.dark .text-\[\#1E293B\], body.dark .text-slate-600 {
+      color: #E2E8F0 !important;
+    }
+    body.dark .text-\[\#475569\], body.dark .text-slate-500 {
+      color: #94A3B8 !important;
+    }
+    body.dark .border-\[\#E2E8F0\], body.dark .border-\[\#E8EFEC\], body.dark .border-slate-200 {
+      border-color: #334155 !important;
+    }
+    body.dark input, body.dark select {
+      background-color: #0F172A !important;
+      border-color: #334155 !important;
+      color: #F1F5F9 !important;
+    }
+
+    /* Live Voice Status Indicator Pulse */
+    .status-pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background-color: #10B981;
+      display: inline-block;
+      animation: pulseGreen 1.5s infinite;
+    }
+    @keyframes pulseGreen {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.35); opacity: 0.6; }
+    }
+
     /* Resize handle indicator */
     .vf-resize-handle {
       position: absolute;
@@ -185,10 +311,43 @@
     }
   </style>
   <script>
+    window.switchTab = function(tab) {
+      ["settings", "history", "more"].forEach((t) => {
+        const content = document.getElementById(`tab-${t}`);
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const active = t === tab;
+        if (content) content.classList.toggle("hidden", !active);
+        if (btn) {
+          btn.className = active
+            ? "flex-1 py-1.5 px-3 rounded-full bg-[#2E7D62] text-white text-[12.5px] font-medium flex items-center justify-center gap-1.5 shadow-sm transition"
+            : "flex-1 py-1.5 px-3 rounded-full text-[#475569] hover:text-[#0F172A] text-[12.5px] font-medium flex items-center justify-center gap-1.5 transition";
+        }
+      });
+      if (window.lucide) window.lucide.createIcons();
+    };
+
+    window.updateSpeedSlider = function(slider) {
+      if (!slider) return;
+      const min = parseFloat(slider.min || 0.5);
+      const max = parseFloat(slider.max || 2.0);
+      const val = parseFloat(slider.value || 1.0);
+      const pct = ((val - min) / (max - min)) * 100;
+      slider.style.background = `linear-gradient(to right, #1D6E53 0%, #1D6E53 ${pct}%, #DCE3E0 ${pct}%, #DCE3E0 100%)`;
+      const valEl = document.getElementById("speed-val");
+      if (valEl) valEl.innerText = val.toFixed(1) + "x";
+      if (window.saveUserPreference) {
+        window.saveUserPreference('speed', val);
+      }
+    };
+
     window.switchMode = function(expanded) {
       const isExp = Boolean(expanded);
       const collapsedEl = document.getElementById("collapsed-view");
       const expandedEl = document.getElementById("expanded-view");
+
+      if (window.saveUserPreference) {
+        window.saveUserPreference('windowMode', isExp ? 'expanded' : 'collapsed');
+      }
 
       if (isExp) {
         if (collapsedEl) {
@@ -218,6 +377,10 @@
         window.__TAURI__.core.invoke("set_window_mode", { expanded: isExp }).catch(console.warn);
       }
     };
+
+    window.handleMicToggle = window.handleMicToggle || function() {
+      console.log("VoiceEngine initializing...");
+    };
   </script>
 </head>
 <body class="p-1.5 w-full h-full flex items-center justify-center">
@@ -229,15 +392,15 @@
        class="relative w-full h-full min-w-[200px] min-h-[48px] bg-white/95 backdrop-blur-md rounded-full pill-shadow border border-slate-100 flex items-center justify-between pl-2 pr-3 cursor-move">
     
     <!-- Left Mic Button -->
-    <button id="pill-mic-btn" onclick="handleMicToggle()" title="Toggle Voice Typing (Alt+V)"
-            class="w-[38px] h-[38px] rounded-full mic-btn-gradient recording-pulse text-white flex items-center justify-center shrink-0 transition-transform active:scale-95">
-      <i data-lucide="mic" class="w-[18px] h-[18px] stroke-[2]"></i>
+    <button id="pill-mic-btn" onclick="handleMicToggle()" title="Voice Typing Idle - Click to Start (Alt+V)"
+            class="w-[38px] h-[38px] rounded-full mic-btn-idle text-white flex items-center justify-center shrink-0 transition-all duration-200 active:scale-95 cursor-pointer">
+      <i data-lucide="mic" class="w-[18px] h-[18px] stroke-[2] opacity-90"></i>
     </button>
 
     <!-- Status Text -->
     <span id="pill-status" data-tauri-drag-region
           class="text-[13.5px] font-medium text-[#334155] tracking-[-0.01em] ml-2.5 mr-auto select-none pointer-events-none truncate">
-      Listening...
+      Press to start ...
     </span>
 
     <!-- Multi-Tone Waveform Bars -->
@@ -282,34 +445,46 @@
         <span data-tauri-drag-region class="font-semibold text-[#1E293B] text-[15.5px] tracking-[-0.015em]">
           VoiceFlow
         </span>
+        <!-- Active Target Window Indicator Badge -->
+        <span id="target-window-badge" title="Active Window receiving your voice typing"
+              class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60 max-w-[120px] truncate">
+          <span class="status-pulse-dot"></span>
+          <span id="target-window-text" class="truncate">Active App</span>
+        </span>
       </div>
-      <button onclick="switchMode(false)" title="Collapse to floating pill"
-              class="w-7 h-7 rounded-full hover:bg-slate-100 text-[#64748B] hover:text-[#0F172A] flex items-center justify-center transition">
-        <i data-lucide="x" class="w-[17px] h-[17px] stroke-[2]"></i>
-      </button>
+      <div class="flex items-center gap-1">
+        <button onclick="toggleDarkMode()" title="Toggle Dark/Light Mode"
+                class="w-7 h-7 rounded-full hover:bg-slate-100 text-[#64748B] hover:text-[#0F172A] flex items-center justify-center transition">
+          <i id="theme-btn-icon" data-lucide="moon" class="w-[15px] h-[15px] stroke-[2]"></i>
+        </button>
+        <button onclick="switchMode(false)" title="Collapse to floating pill"
+                class="w-7 h-7 rounded-full hover:bg-slate-100 text-[#64748B] hover:text-[#0F172A] flex items-center justify-center transition">
+          <i data-lucide="x" class="w-[17px] h-[17px] stroke-[2]"></i>
+        </button>
+      </div>
     </div>
 
-    <!-- Active Listening Mint Banner -->
-    <div class="listening-banner rounded-[18px] p-3.5 flex items-center gap-3.5">
+    <!-- Active Listening Mint Banner (Idle by default) -->
+    <div class="listening-banner idle-banner rounded-[18px] p-3.5 flex items-center gap-3.5">
       <!-- Outer Subtle White Halo Ring around Mic -->
-      <div class="p-[3px] rounded-full bg-white/60 shadow-sm shrink-0">
-        <button id="panel-mic-btn" onclick="handleMicToggle()" title="Toggle Voice Typing"
-                class="w-[52px] h-[52px] rounded-full mic-btn-gradient recording-pulse text-white flex items-center justify-center transition-transform active:scale-95">
-          <i data-lucide="mic" class="w-[24px] h-[24px] stroke-[1.9]"></i>
+      <div class="p-[3px] rounded-full bg-white/60 dark:bg-slate-700/60 shadow-sm shrink-0">
+        <button id="panel-mic-btn" onclick="handleMicToggle()" title="Voice Typing Idle - Click to Start (Alt+V)"
+                class="w-[52px] h-[52px] rounded-full mic-btn-idle text-white flex items-center justify-center transition-all duration-200 active:scale-95 cursor-pointer">
+          <i data-lucide="mic" class="w-[24px] h-[24px] stroke-[1.9] opacity-90"></i>
         </button>
       </div>
 
       <div class="flex flex-col flex-1 min-w-0">
-        <!-- Mini Circle-Mic Badge + "Listening..." -->
+        <!-- Mini Circle-Mic Badge + Status -->
         <div class="flex items-center gap-1.5 mb-2">
-          <span class="w-[15px] h-[15px] rounded-full bg-[#1E6F53] text-white flex items-center justify-center shrink-0">
+          <span id="panel-status-dot" class="w-[15px] h-[15px] rounded-full bg-slate-400 text-white flex items-center justify-center shrink-0 transition-colors">
             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
               <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
             </svg>
           </span>
-          <span id="panel-status" class="text-[13.5px] font-medium text-[#196249] tracking-[-0.01em]">
-            Listening...
+          <span id="panel-status" class="text-[13.5px] font-medium text-slate-600 dark:text-slate-300 tracking-[-0.01em]">
+            Ready
           </span>
         </div>
         <!-- 25-Bar Multi-Tone Waveform -->
@@ -365,8 +540,10 @@
       </button>
     </div>
 
-    <!-- TAB 1: SETTINGS CARD (Default Active) -->
-    <div id="tab-settings" class="bg-[#F7FAF9] border border-[#E8EFEC] rounded-[18px] p-3.5 space-y-3 text-[12.5px]">
+    <!-- Middle Scrollable Tabs Container (Ensures Bottom Action Dock is ALWAYS visible) -->
+    <div class="flex-1 overflow-y-auto my-2 pr-0.5 space-y-2.5 min-h-0">
+      <!-- TAB 1: SETTINGS CARD (Default Active) -->
+      <div id="tab-settings" class="bg-[#F7FAF9] border border-[#E8EFEC] rounded-[18px] p-3.5 space-y-2.5 text-[12.5px]">
       <!-- Language -->
       <div class="flex items-center justify-between">
         <span class="text-[#334155] font-medium">Language</span>
@@ -375,6 +552,8 @@
                   class="w-full appearance-none bg-white border border-[#E2E8F0] rounded-[10px] pl-3 pr-7 py-1.5 text-[12px] text-[#1E293B] font-medium shadow-[0_1px_2px_rgba(0,0,0,0.03)] focus:outline-none focus:border-[#2E7D62]">
             <option value="en-US">English (US)</option>
             <option value="en-GB">English (UK)</option>
+            <option value="bn-BD">Bengali (BD)</option>
+            <option value="bn-IN">Bengali (IN)</option>
             <option value="es-ES">Spanish (ES)</option>
             <option value="fr-FR">French (FR)</option>
             <option value="de-DE">German (DE)</option>
@@ -410,8 +589,26 @@
         </div>
       </div>
 
-      <!-- Auto Punctuation -->
+      <!-- Dark Theme Mode -->
       <div class="flex items-center justify-between pt-0.5">
+        <span class="text-[#334155] font-medium flex items-center gap-1.5">
+          <i data-lucide="moon" class="w-3.5 h-3.5 text-indigo-500"></i>
+          <span>Dark Theme</span>
+        </span>
+        <div id="toggle-dark" onclick="toggleDarkMode(this)" class="vf-toggle" data-enabled="false"></div>
+      </div>
+
+      <!-- Audio Tone Feedback -->
+      <div class="flex items-center justify-between">
+        <span class="text-[#334155] font-medium flex items-center gap-1.5">
+          <i data-lucide="volume-2" class="w-3.5 h-3.5 text-emerald-600"></i>
+          <span>Audio Cue on Mic</span>
+        </span>
+        <div id="toggle-sound" onclick="toggleSwitch(this)" class="vf-toggle active" data-enabled="true"></div>
+      </div>
+
+      <!-- Auto Punctuation -->
+      <div class="flex items-center justify-between">
         <span class="text-[#334155] font-medium">Auto Punctuation</span>
         <div id="toggle-punct" onclick="toggleSwitch(this)" class="vf-toggle active" data-enabled="true"></div>
       </div>
@@ -484,9 +681,10 @@
         </select>
       </div>
     </div>
+  </div>
 
     <!-- Bottom 4-Icon Action Dock (Copy | Clear | Translate | Settings) -->
-    <div class="bg-[#F4F7F6] border border-[#E8EFEC] rounded-[16px] py-2 px-3 grid grid-cols-4 text-[11.5px] font-medium text-[#475569]">
+    <div class="bg-[#F4F7F6] border border-[#E8EFEC] rounded-[16px] py-2 px-3 grid grid-cols-4 text-[11.5px] font-medium text-[#475569] shrink-0 mt-1">
       <button onclick="copyTranscript()" class="hover:text-[#1D6E53] flex flex-col items-center gap-1 transition">
         <i data-lucide="copy" class="w-[16px] h-[16px] stroke-[1.8]"></i>
         <span>Copy</span>
@@ -568,7 +766,9 @@
     });
 
     let isListening = false;
-    let currentStreamingInterim = "";
+    let isFirstPhraseInSession = true;
+    let lastProcessedFinalText = "";
+    let lastProcessedFinalTime = 0;
     let transcriptText = "Hey, this is a voice to text app.\nYou can speak anywhere on your\nscreen and it will type for you.";
 
     // Restore saved API key
@@ -606,6 +806,104 @@
       });
     }
 
+    // Reset Waveform bars to base resting position
+    function resetWaveform() {
+      const bars = document.querySelectorAll(".wave-bar");
+      bars.forEach((bar) => {
+        const base = parseFloat(bar.dataset.baseHeight || 6);
+        bar.style.height = `${base}px`;
+      });
+    }
+
+    // =========================================================================
+    // MIC BUTTON & BANNER DYNAMIC STATE MANAGER
+    // =========================================================================
+    function updateMicState(state) {
+      // state: 'idle' | 'connecting' | 'listening'
+      const pillBtn = document.getElementById("pill-mic-btn");
+      const panelBtn = document.getElementById("panel-mic-btn");
+      const pillStatus = document.getElementById("pill-status");
+      const panelStatus = document.getElementById("panel-status");
+      const banner = document.querySelector(".listening-banner");
+      const statusDot = document.getElementById("panel-status-dot");
+
+      if (!pillBtn || !panelBtn) return;
+
+      // Clean old state classes
+      [pillBtn, panelBtn].forEach((btn) => {
+        btn.classList.remove("mic-btn-idle", "mic-btn-connecting", "mic-btn-active", "recording-pulse");
+      });
+
+      if (state === "listening") {
+        isListening = true;
+        pillBtn.classList.add("mic-btn-active", "recording-pulse");
+        panelBtn.classList.add("mic-btn-active", "recording-pulse");
+        pillBtn.setAttribute("title", "Voice Typing Active - Click to Stop (Alt+V)");
+        panelBtn.setAttribute("title", "Voice Typing Active - Click to Stop (Alt+V)");
+
+        pillBtn.innerHTML = `<i data-lucide="mic" class="w-[18px] h-[18px] stroke-[2.2]"></i>`;
+        panelBtn.innerHTML = `<i data-lucide="mic" class="w-[24px] h-[24px] stroke-[2.2]"></i>`;
+
+        if (pillStatus) pillStatus.innerText = "Listening...";
+        if (panelStatus) panelStatus.innerText = "Listening...";
+
+        if (banner) {
+          banner.classList.remove("idle-banner", "connecting-banner");
+        }
+        if (statusDot) {
+          statusDot.className = "w-[15px] h-[15px] rounded-full bg-[#1E6F53] text-white flex items-center justify-center shrink-0 transition-colors";
+        }
+      } else if (state === "connecting") {
+        isListening = false;
+        pillBtn.classList.add("mic-btn-connecting");
+        panelBtn.classList.add("mic-btn-connecting");
+        pillBtn.setAttribute("title", "Connecting microphone...");
+        panelBtn.setAttribute("title", "Connecting microphone...");
+
+        pillBtn.innerHTML = `<i data-lucide="loader-2" class="w-[18px] h-[18px] stroke-[2.2] animate-spin"></i>`;
+        panelBtn.innerHTML = `<i data-lucide="loader-2" class="w-[24px] h-[24px] stroke-[2.2] animate-spin"></i>`;
+
+        if (pillStatus) pillStatus.innerText = "Connecting...";
+        if (panelStatus) panelStatus.innerText = "Connecting...";
+
+        if (banner) {
+          banner.classList.remove("idle-banner");
+          banner.classList.add("connecting-banner");
+        }
+        if (statusDot) {
+          statusDot.className = "w-[15px] h-[15px] rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 transition-colors";
+        }
+      } else {
+        // 'idle' or 'ready'
+        isListening = false;
+        pillBtn.classList.add("mic-btn-idle");
+        panelBtn.classList.add("mic-btn-idle");
+        pillBtn.setAttribute("title", "Voice Typing Idle - Click to Start (Alt+V)");
+        panelBtn.setAttribute("title", "Voice Typing Idle - Click to Start (Alt+V)");
+
+        pillBtn.innerHTML = `<i data-lucide="mic" class="w-[18px] h-[18px] stroke-[2] opacity-90"></i>`;
+        panelBtn.innerHTML = `<i data-lucide="mic" class="w-[24px] h-[24px] stroke-[2] opacity-90"></i>`;
+
+        if (pillStatus) pillStatus.innerText = "Press to start ...";
+        if (panelStatus) panelStatus.innerText = "Ready";
+
+        if (banner) {
+          banner.classList.remove("connecting-banner");
+          banner.classList.add("idle-banner");
+        }
+        if (statusDot) {
+          statusDot.className = "w-[15px] h-[15px] rounded-full bg-slate-400 text-white flex items-center justify-center shrink-0 transition-colors";
+        }
+
+        resetWaveform();
+      }
+
+      if (window.lucide) {
+        try { window.lucide.createIcons(); } catch (_) {}
+      }
+    }
+    window.updateMicState = updateMicState;
+
     // Voice Engine Integration (Gemini Live API + Fallback)
     const voiceEngine = new VoiceEngine({
       apiKey: savedKey || '',
@@ -613,12 +911,13 @@
       language: document.getElementById('language-select')?.value || 'en-US',
 
       onStatusChange: (status) => {
-        const isLive = status === 'Listening...';
-        isListening = isLive;
-        document.getElementById("pill-status").innerText = status;
-        document.getElementById("panel-status").innerText = status;
-        document.getElementById("pill-mic-btn").classList.toggle("recording-pulse", isLive);
-        document.getElementById("panel-mic-btn").classList.toggle("recording-pulse", isLive);
+        if (status === 'Listening...') {
+          updateMicState('listening');
+        } else if (status === 'Connecting...') {
+          updateMicState('connecting');
+        } else {
+          updateMicState('idle');
+        }
       },
 
       onAudioLevel: (levels) => {
@@ -626,71 +925,63 @@
       },
 
       onInterimText: async (interim) => {
-        // 1. Update VoiceFlow UI transcript preview
+        if (!interim || !interim.trim()) return;
+
+        // 1. Update VoiceFlow UI transcript box with real-time italic preview
         const box = document.getElementById("transcript-box");
         if (box) {
           box.innerHTML = `${transcriptText.replace(/\n/g, "<br>")} <span class="italic text-slate-400">${interim}</span><span class="emerald-caret"></span>`;
           box.scrollTop = box.scrollHeight;
         }
 
-        // 2. Real-time direct typing at active mouse pointer / target input
-        const directType = document.getElementById("toggle-direct")?.dataset.enabled === "true";
-        if (directType && tauriCore && interim) {
-          // If the interim text extends the currently typed word/phrase
-          const trimmed = interim.trim();
-          if (trimmed.startsWith(currentStreamingInterim)) {
-            const delta = trimmed.slice(currentStreamingInterim.length);
-            if (delta.length > 0) {
-              currentStreamingInterim = trimmed;
-              try {
-                await tauriCore.invoke("inject_text", { text: delta });
-              } catch (_) {}
-            }
-          } else if (trimmed.length > 0) {
-            // If words changed in interim recognition, adjust via backspace and type fresh
-            const deleteCount = currentStreamingInterim.length;
-            currentStreamingInterim = trimmed;
-            try {
-              if (deleteCount > 0) {
-                await tauriCore.invoke("backspace", { count: deleteCount });
-              }
-              await tauriCore.invoke("inject_text", { text: trimmed });
-            } catch (_) {}
-          }
+        // 2. Real-time visual feedback on floating pill
+        const pillStatus = document.getElementById("pill-status");
+        if (pillStatus) {
+          pillStatus.innerText = interim.length > 24 ? `${interim.slice(0, 24)}...` : interim;
         }
       },
 
       onFinalText: async (finalText) => {
         if (!finalText || !finalText.trim()) return;
-        const autoPunct = document.getElementById("toggle-punct")?.dataset.enabled === "true";
-        let text = finalText.trim();
-        if (autoPunct && !/[.!?]$/.test(text)) text += '.';
 
+        const cleanFinal = finalText.trim();
+        const now = Date.now();
+        // Strict deduplication: ignore identical finalized chunk arriving within 1.2s
+        if (cleanFinal === lastProcessedFinalText && (now - lastProcessedFinalTime < 1200)) {
+          return;
+        }
+        lastProcessedFinalText = cleanFinal;
+        lastProcessedFinalTime = now;
+
+        // Smart punctuation
+        let text = cleanFinal;
+        const autoPunct = document.getElementById("toggle-punct")?.dataset.enabled === "true";
+        if (autoPunct) {
+          const lang = document.getElementById("language-select")?.value || 'en-US';
+          if (lang.startsWith("bn")) {
+            if (!/[।!?]$/.test(text)) text += '।';
+          } else {
+            if (!/[.!?]$/.test(text)) text += '.';
+          }
+        }
+
+        // 1. Update VoiceFlow internal state & UI
         transcriptText += (transcriptText ? ' ' : '') + text;
         renderTranscript();
         addHistoryItem(text);
 
-        // Complete real-time OS cursor typing
+        // 2. Clean, atomic OS Cursor Typing into active target window (Zero Duplication!)
         const directType = document.getElementById("toggle-direct")?.dataset.enabled === "true";
         if (directType && tauriCore) {
           try {
-            if (currentStreamingInterim.length > 0) {
-              // Interim was already streamed; clear tracking and add punctuation/space
-              const remaining = text.startsWith(currentStreamingInterim)
-                ? text.slice(currentStreamingInterim.length)
-                : ` ${text}`;
-              currentStreamingInterim = "";
-              if (remaining.length > 0) {
-                await tauriCore.invoke("inject_text", { text: remaining });
-              }
-            } else {
-              // Direct single shot
-              await tauriCore.invoke("inject_text", { text: ` ${text}` });
-            }
+            const toType = isFirstPhraseInSession ? text : ` ${text}`;
+            isFirstPhraseInSession = false;
+            await tauriCore.invoke("inject_text", { text: toType });
           } catch (_) {}
-        } else {
-          currentStreamingInterim = "";
         }
+
+        const pillStatus = document.getElementById("pill-status");
+        if (pillStatus) pillStatus.innerText = "Listening...";
 
         const notify = document.getElementById("toggle-notify")?.dataset.enabled === "true";
         if (notify) showToast(`Typed: "${text.slice(0, 24)}..."`);
@@ -698,30 +989,105 @@
 
       onError: (err) => {
         showToast(err);
+        updateMicState('idle');
       }
     });
 
+    // =========================================================================
+    // STATE MANAGEMENT ENGINE
+    // =========================================================================
+    const DEFAULT_CONFIG = {
+      theme: 'light',
+      language: 'en-US',
+      voice: 'Jenny',
+      speed: 1.0,
+      soundFeedback: true,
+      autoPunctuation: true,
+      notifications: true,
+      directTyping: true,
+      translateLang: 'Spanish',
+      windowMode: 'collapsed' // 'collapsed' | 'expanded'
+    };
+
+    function loadUserPreferences() {
+      try {
+        const saved = localStorage.getItem("VF_USER_PREFERENCES");
+        return saved ? { ...DEFAULT_CONFIG, ...JSON.parse(saved) } : { ...DEFAULT_CONFIG };
+      } catch (_) {
+        return { ...DEFAULT_CONFIG };
+      }
+    }
+
+    function saveUserPreference(key, value) {
+      const current = loadUserPreferences();
+      current[key] = value;
+      try {
+        localStorage.setItem("VF_USER_PREFERENCES", JSON.stringify(current));
+      } catch (_) {}
+    }
+    window.saveUserPreference = saveUserPreference;
+    window.loadUserPreferences = loadUserPreferences;
+
+    // Audio cue generator using Web Audio API for mic clicks
+    function playAudioCue(type) {
+      const prefs = loadUserPreferences();
+      if (!prefs.soundFeedback) return;
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'start') {
+          osc.frequency.setValueAtTime(440, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
+          gain.gain.setValueAtTime(0.08, ctx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.13);
+        } else {
+          osc.frequency.setValueAtTime(880, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.12);
+          gain.gain.setValueAtTime(0.08, ctx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.13);
+        }
+      } catch (_) {}
+    }
+    window.playAudioCue = playAudioCue;
+
+    // Dark Mode Theme Handler
+    window.toggleDarkMode = function(el) {
+      const isDark = document.body.classList.toggle("dark");
+      const icon = document.getElementById("theme-btn-icon");
+      if (icon) {
+        icon.setAttribute("data-lucide", isDark ? "sun" : "moon");
+      }
+      const toggleEl = document.getElementById("toggle-dark");
+      if (toggleEl) {
+        toggleEl.dataset.enabled = isDark ? "true" : "false";
+        toggleEl.classList.toggle("active", isDark);
+      }
+      saveUserPreference('theme', isDark ? 'dark' : 'light');
+      if (window.lucide) window.lucide.createIcons();
+      showToast(isDark ? "Dark theme enabled" : "Light theme enabled");
+    };
+
+    // =========================================================================
+    // UI CONTROL HANDLERS (DEFINED FIRST BEFORE PREFERENCE INITIALIZATION)
+    // =========================================================================
     window.updateSpeedSlider = function(slider) {
-      const min = parseFloat(slider.min);
-      const max = parseFloat(slider.max);
-      const val = parseFloat(slider.value);
+      if (!slider) return;
+      const min = parseFloat(slider.min || 0.5);
+      const max = parseFloat(slider.max || 2.0);
+      const val = parseFloat(slider.value || 1.0);
       const pct = ((val - min) / (max - min)) * 100;
       slider.style.background = `linear-gradient(to right, #1D6E53 0%, #1D6E53 ${pct}%, #DCE3E0 ${pct}%, #DCE3E0 100%)`;
-      document.getElementById("speed-val").innerText = val.toFixed(1) + "x";
-    };
-
-    window.toggleSwitch = function(el) {
-      const enabled = el.dataset.enabled !== "true";
-      el.dataset.enabled = enabled ? "true" : "false";
-      el.classList.toggle("active", enabled);
-    };
-
-    window.toggleAutostart = async function(el) {
-      window.toggleSwitch(el);
-      const enabled = el.dataset.enabled === "true";
-      if (tauriCore) {
-        try { await tauriCore.invoke("set_autostart", { enabled }); } catch (_) {}
-      }
+      const valEl = document.getElementById("speed-val");
+      if (valEl) valEl.innerText = val.toFixed(1) + "x";
+      saveUserPreference('speed', val);
     };
 
     window.switchTab = function(tab) {
@@ -743,6 +1109,8 @@
       const isExp = Boolean(expanded);
       const collapsedEl = document.getElementById("collapsed-view");
       const expandedEl = document.getElementById("expanded-view");
+
+      saveUserPreference('windowMode', isExp ? 'expanded' : 'collapsed');
 
       if (isExp) {
         if (collapsedEl) {
@@ -775,15 +1143,127 @@
       }
     };
 
-    window.handleMicToggle = function() {
-      currentStreamingInterim = "";
-      const key = document.getElementById("api-key").value.trim() || localStorage.getItem("VF_API_KEY") || "";
-      if (key) {
-        voiceEngine.setApiKey(key);
-        localStorage.setItem("VF_API_KEY", key);
+    window.toggleSwitch = function(el) {
+      const enabled = el.dataset.enabled !== "true";
+      el.dataset.enabled = enabled ? "true" : "false";
+      el.classList.toggle("active", enabled);
+
+      if (el.id === "toggle-punct") saveUserPreference('autoPunctuation', enabled);
+      if (el.id === "toggle-notify") saveUserPreference('notifications', enabled);
+      if (el.id === "toggle-direct") saveUserPreference('directTyping', enabled);
+      if (el.id === "toggle-sound") saveUserPreference('soundFeedback', enabled);
+    };
+
+    window.toggleAutostart = async function(el) {
+      window.toggleSwitch(el);
+      const enabled = el.dataset.enabled === "true";
+      saveUserPreference('autostart', enabled);
+      if (tauriCore) {
+        try { await tauriCore.invoke("set_autostart", { enabled }); } catch (_) {}
       }
-      voiceEngine.setLanguage(document.getElementById("language-select")?.value || 'en-US');
-      voiceEngine.toggle();
+    };
+
+    // Apply loaded user state to UI controls
+    function applyUserPreferences() {
+      const prefs = loadUserPreferences();
+
+      // 1. Theme
+      if (prefs.theme === 'dark') {
+        document.body.classList.add("dark");
+        const toggleEl = document.getElementById("toggle-dark");
+        if (toggleEl) {
+          toggleEl.dataset.enabled = "true";
+          toggleEl.classList.add("active");
+        }
+        const icon = document.getElementById("theme-btn-icon");
+        if (icon) icon.setAttribute("data-lucide", "sun");
+      }
+
+      // 2. Language
+      const langSel = document.getElementById("language-select");
+      if (langSel && prefs.language) langSel.value = prefs.language;
+
+      // 3. Voice
+      const voiceSel = document.getElementById("voice-select");
+      if (voiceSel && prefs.voice) voiceSel.value = prefs.voice;
+
+      // 4. Voice Speed
+      const speedSlider = document.getElementById("speed-range");
+      if (speedSlider && prefs.speed) {
+        speedSlider.value = prefs.speed;
+        window.updateSpeedSlider(speedSlider);
+      }
+
+      // 5. Sound feedback
+      const soundToggle = document.getElementById("toggle-sound");
+      if (soundToggle) {
+        soundToggle.dataset.enabled = prefs.soundFeedback ? "true" : "false";
+        soundToggle.classList.toggle("active", Boolean(prefs.soundFeedback));
+      }
+
+      // 6. Auto Punctuation
+      const punctToggle = document.getElementById("toggle-punct");
+      if (punctToggle) {
+        punctToggle.dataset.enabled = prefs.autoPunctuation ? "true" : "false";
+        punctToggle.classList.toggle("active", Boolean(prefs.autoPunctuation));
+      }
+
+      // 7. Notifications
+      const notifyToggle = document.getElementById("toggle-notify");
+      if (notifyToggle) {
+        notifyToggle.dataset.enabled = prefs.notifications ? "true" : "false";
+        notifyToggle.classList.toggle("active", Boolean(prefs.notifications));
+      }
+
+      // 8. Direct Typing
+      const directToggle = document.getElementById("toggle-direct");
+      if (directToggle) {
+        directToggle.dataset.enabled = prefs.directTyping ? "true" : "false";
+        directToggle.classList.toggle("active", Boolean(prefs.directTyping));
+      }
+
+      // 9. Translate Target
+      const transSel = document.getElementById("translate-lang");
+      if (transSel && prefs.translateLang) transSel.value = prefs.translateLang;
+
+      // 10. Change listeners to auto-save preferences
+      langSel?.addEventListener("change", (e) => saveUserPreference('language', e.target.value));
+      voiceSel?.addEventListener("change", (e) => saveUserPreference('voice', e.target.value));
+      transSel?.addEventListener("change", (e) => saveUserPreference('translateLang', e.target.value));
+    }
+
+    // Initialize Preferences safely
+    applyUserPreferences();
+
+
+
+    window.handleMicToggle = function() {
+      const willStart = !isListening;
+      isFirstPhraseInSession = true;
+      lastProcessedFinalText = "";
+      lastProcessedFinalTime = 0;
+      if (window.playAudioCue) {
+        window.playAudioCue(willStart ? 'start' : 'stop');
+      }
+
+      if (willStart) {
+        // Immediate visual state transition to 'connecting' on click
+        updateMicState('connecting');
+        const key = document.getElementById("api-key").value.trim() || localStorage.getItem("VF_API_KEY") || "";
+        if (key) {
+          voiceEngine.setApiKey(key);
+          localStorage.setItem("VF_API_KEY", key);
+        }
+        voiceEngine.setLanguage(document.getElementById("language-select")?.value || 'en-US');
+        voiceEngine.start().catch((err) => {
+          console.warn("voiceEngine start error:", err);
+          updateMicState('idle');
+          showToast("Mic connection failed");
+        });
+      } else {
+        voiceEngine.stop();
+        updateMicState('idle');
+      }
     };
 
     function renderTranscript() {
@@ -1068,6 +1548,22 @@
       tauriEvent.listen("toggle-listening", () => {
         window.handleMicToggle();
       });
+
+      // Target window tracker listener
+      tauriEvent.listen("target-window-changed", (event) => {
+        const title = event.payload || "";
+        const badge = document.getElementById("target-window-badge");
+        const txt = document.getElementById("target-window-text");
+        if (badge && txt) {
+          if (title && title.trim()) {
+            txt.innerText = title.slice(0, 18);
+            badge.title = `Direct typing target: ${title}`;
+            badge.classList.remove("hidden");
+          } else {
+            txt.innerText = "Desktop / App";
+          }
+        }
+      });
     }
 
     // Keyboard shortcuts
@@ -1079,6 +1575,9 @@
         window.sendToActiveWindow();
       }
     });
+
+    // Initialize mic state cleanly to idle on launch
+    updateMicState('idle');
   </script>
 </body>
 </html>
