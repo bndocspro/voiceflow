@@ -463,7 +463,15 @@
       </div>
       <div class="flex items-center justify-between">
         <span class="text-[#334155] font-medium">Global Shortcut</span>
-        <span class="font-mono text-[11px] bg-white border border-slate-200 rounded px-2 py-0.5 font-semibold text-slate-700">Alt + V</span>
+        <div class="flex items-center gap-1.5">
+          <input id="hotkey-input" type="text" readonly value="Alt+V"
+                 title="Click to record shortcut or select preset"
+                 onclick="startHotkeyRecord(this)"
+                 class="w-[110px] text-center font-mono text-[11px] bg-white border border-slate-200 hover:border-[#2E7D62] rounded-[8px] px-2 py-1 font-semibold text-slate-700 cursor-pointer shadow-sm transition focus:outline-none focus:ring-1 focus:ring-[#2E7D62]" />
+          <button onclick="resetDefaultHotkey()" title="Reset to Alt+V" class="text-slate-400 hover:text-slate-600 p-1 text-[11px]">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
       </div>
       <div class="flex items-center justify-between">
         <span class="text-[#334155] font-medium">Translate Target</span>
@@ -560,6 +568,7 @@
     });
 
     let isListening = false;
+    let currentStreamingInterim = "";
     let transcriptText = "Hey, this is a voice to text app.\nYou can speak anywhere on your\nscreen and it will type for you.";
 
     // Restore saved API key
@@ -616,11 +625,38 @@
         animateWavebars(levels);
       },
 
-      onInterimText: (interim) => {
+      onInterimText: async (interim) => {
+        // 1. Update VoiceFlow UI transcript preview
         const box = document.getElementById("transcript-box");
         if (box) {
           box.innerHTML = `${transcriptText.replace(/\n/g, "<br>")} <span class="italic text-slate-400">${interim}</span><span class="emerald-caret"></span>`;
           box.scrollTop = box.scrollHeight;
+        }
+
+        // 2. Real-time direct typing at active mouse pointer / target input
+        const directType = document.getElementById("toggle-direct")?.dataset.enabled === "true";
+        if (directType && tauriCore && interim) {
+          // If the interim text extends the currently typed word/phrase
+          const trimmed = interim.trim();
+          if (trimmed.startsWith(currentStreamingInterim)) {
+            const delta = trimmed.slice(currentStreamingInterim.length);
+            if (delta.length > 0) {
+              currentStreamingInterim = trimmed;
+              try {
+                await tauriCore.invoke("inject_text", { text: delta });
+              } catch (_) {}
+            }
+          } else if (trimmed.length > 0) {
+            // If words changed in interim recognition, adjust via backspace and type fresh
+            const deleteCount = currentStreamingInterim.length;
+            currentStreamingInterim = trimmed;
+            try {
+              if (deleteCount > 0) {
+                await tauriCore.invoke("backspace", { count: deleteCount });
+              }
+              await tauriCore.invoke("inject_text", { text: trimmed });
+            } catch (_) {}
+          }
         }
       },
 
@@ -634,12 +670,26 @@
         renderTranscript();
         addHistoryItem(text);
 
-        // Direct OS Cursor Typing
+        // Complete real-time OS cursor typing
         const directType = document.getElementById("toggle-direct")?.dataset.enabled === "true";
         if (directType && tauriCore) {
           try {
-            await tauriCore.invoke("inject_text", { text: ` ${text}` });
+            if (currentStreamingInterim.length > 0) {
+              // Interim was already streamed; clear tracking and add punctuation/space
+              const remaining = text.startsWith(currentStreamingInterim)
+                ? text.slice(currentStreamingInterim.length)
+                : ` ${text}`;
+              currentStreamingInterim = "";
+              if (remaining.length > 0) {
+                await tauriCore.invoke("inject_text", { text: remaining });
+              }
+            } else {
+              // Direct single shot
+              await tauriCore.invoke("inject_text", { text: ` ${text}` });
+            }
           } catch (_) {}
+        } else {
+          currentStreamingInterim = "";
         }
 
         const notify = document.getElementById("toggle-notify")?.dataset.enabled === "true";
@@ -726,6 +776,7 @@
     };
 
     window.handleMicToggle = function() {
+      currentStreamingInterim = "";
       const key = document.getElementById("api-key").value.trim() || localStorage.getItem("VF_API_KEY") || "";
       if (key) {
         voiceEngine.setApiKey(key);
@@ -906,6 +957,112 @@
       }
     };
 
+    // =========================================================================
+    // DYNAMIC GLOBAL SHORTCUT CUSTOMIZATION
+    // =========================================================================
+    let isRecordingHotkey = false;
+
+    // Load saved hotkey
+    const savedHotkey = localStorage.getItem("VF_GLOBAL_HOTKEY") || "Alt+V";
+    const hotkeyInput = document.getElementById("hotkey-input");
+    if (hotkeyInput) hotkeyInput.value = savedHotkey;
+
+    // Convert browser keyboard event to Tauri Shortcut format
+    // e.g. Alt + KeyV -> "Alt+KeyV"
+    function formatTauriShortcut(e) {
+      const parts = [];
+      if (e.ctrlKey) parts.push("Control");
+      if (e.altKey) parts.push("Alt");
+      if (e.shiftKey) parts.push("Shift");
+      if (e.metaKey) parts.push("Super");
+
+      let key = e.code; // e.g. "KeyV", "Space", "F8", "KeyA"
+      if (key.startsWith("Key")) {
+        key = key; // "KeyV"
+      } else if (key.startsWith("Digit")) {
+        key = key;
+      }
+      if (["ControlLeft", "ControlRight", "AltLeft", "AltRight", "ShiftLeft", "ShiftRight", "MetaLeft", "MetaRight"].includes(e.code)) {
+        return null; // Modifiers only
+      }
+
+      parts.push(key);
+      return parts.join("+");
+    }
+
+    function formatDisplayShortcut(e) {
+      const parts = [];
+      if (e.ctrlKey) parts.push("Ctrl");
+      if (e.altKey) parts.push("Alt");
+      if (e.shiftKey) parts.push("Shift");
+      if (e.metaKey) parts.push("Win");
+
+      let key = e.key.toUpperCase();
+      if (e.code.startsWith("Key")) key = e.code.replace("Key", "");
+      if (["CONTROL", "ALT", "SHIFT", "META"].includes(key)) return null;
+
+      parts.push(key);
+      return parts.join("+");
+    }
+
+    window.startHotkeyRecord = function(inputEl) {
+      if (isRecordingHotkey) return;
+      isRecordingHotkey = true;
+      inputEl.value = "Press keys...";
+      inputEl.classList.add("ring-2", "ring-[#1D6E53]", "bg-emerald-50");
+
+      const onKeyHandler = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (e.key === "Escape") {
+          isRecordingHotkey = false;
+          inputEl.value = localStorage.getItem("VF_GLOBAL_HOTKEY") || "Alt+V";
+          inputEl.classList.remove("ring-2", "ring-[#1D6E53]", "bg-emerald-50");
+          window.removeEventListener("keydown", onKeyHandler, true);
+          return;
+        }
+
+        const tauriFormat = formatTauriShortcut(e);
+        const displayFormat = formatDisplayShortcut(e);
+
+        if (tauriFormat && displayFormat) {
+          isRecordingHotkey = false;
+          inputEl.classList.remove("ring-2", "ring-[#1D6E53]", "bg-emerald-50");
+          window.removeEventListener("keydown", onKeyHandler, true);
+
+          inputEl.value = displayFormat;
+          localStorage.setItem("VF_GLOBAL_HOTKEY", displayFormat);
+          localStorage.setItem("VF_TAURI_HOTKEY", tauriFormat);
+
+          if (tauriCore) {
+            try {
+              await tauriCore.invoke("register_shortcut", { shortcutStr: tauriFormat });
+              showToast(`Hotkey registered: ${displayFormat}`);
+            } catch (err) {
+              showToast(`Failed: ${err}`);
+              inputEl.value = "Alt+V";
+            }
+          }
+        }
+      };
+
+      window.addEventListener("keydown", onKeyHandler, true);
+    };
+
+    window.resetDefaultHotkey = async function() {
+      const inputEl = document.getElementById("hotkey-input");
+      if (inputEl) inputEl.value = "Alt+V";
+      localStorage.setItem("VF_GLOBAL_HOTKEY", "Alt+V");
+      localStorage.setItem("VF_TAURI_HOTKEY", "Alt+KeyV");
+      if (tauriCore) {
+        try {
+          await tauriCore.invoke("register_shortcut", { shortcutStr: "Alt+KeyV" });
+          showToast("Reset to Alt+V");
+        } catch (_) {}
+      }
+    };
+
     // Global shortcut Alt+V listener from Rust
     if (tauriEvent) {
       tauriEvent.listen("toggle-listening", () => {
@@ -915,6 +1072,7 @@
 
     // Keyboard shortcuts
     window.addEventListener("keydown", (e) => {
+      if (isRecordingHotkey) return;
       if (e.key === "Escape") {
         window.switchMode(false);
       } else if (e.key === "Enter" && e.ctrlKey) {

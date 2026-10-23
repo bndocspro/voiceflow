@@ -36,7 +36,7 @@ fn get_window_title(hwnd: HWND) -> String {
 fn start_window_tracker(app: AppHandle) {
     thread::spawn(move || {
         loop {
-            thread::sleep(Duration::from_millis(250));
+            thread::sleep(Duration::from_millis(50));
             #[cfg(target_os = "windows")]
             {
                 let fg = unsafe { GetForegroundWindow() };
@@ -70,11 +70,11 @@ fn type_text(text: String, restore_target: bool) -> Result<(), String> {
         let fg = unsafe { GetForegroundWindow() };
 
         // If VoiceFlow has focus or restore is requested, switch to target app
-        if (restore_target || fg == my_hwnd) && target_hwnd != 0 as _ {
+        if (restore_target || fg == my_hwnd) && target_hwnd != 0 as _ && target_hwnd != my_hwnd {
             unsafe {
                 SetForegroundWindow(target_hwnd);
             }
-            thread::sleep(Duration::from_millis(15));
+            thread::sleep(Duration::from_millis(10));
         }
 
         // Batch all unicode keyboard inputs together into a single atomic SendInput call!
