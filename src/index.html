@@ -162,6 +162,41 @@
       transform: translateX(-50%) translateY(0);
     }
   </style>
+  <script>
+    window.switchMode = function(expanded) {
+      const isExp = Boolean(expanded);
+      const collapsedEl = document.getElementById("collapsed-view");
+      const expandedEl = document.getElementById("expanded-view");
+
+      if (isExp) {
+        if (collapsedEl) {
+          collapsedEl.classList.add("hidden");
+          collapsedEl.style.display = "none";
+        }
+        if (expandedEl) {
+          expandedEl.classList.remove("hidden");
+          expandedEl.style.display = "flex";
+        }
+      } else {
+        if (expandedEl) {
+          expandedEl.classList.add("hidden");
+          expandedEl.style.display = "none";
+        }
+        if (collapsedEl) {
+          collapsedEl.classList.remove("hidden");
+          collapsedEl.style.display = "flex";
+        }
+      }
+
+      if (window.lucide) {
+        try { window.lucide.createIcons(); } catch (_) {}
+      }
+
+      if (window.__TAURI__?.core) {
+        window.__TAURI__.core.invoke("set_window_mode", { expanded: isExp }).catch(console.warn);
+      }
+    };
+  </script>
 </head>
 <body class="p-2">
 
@@ -600,15 +635,40 @@
       if (window.lucide) window.lucide.createIcons();
     };
 
-    window.switchMode = async function(expanded) {
-      if (tauriCore) {
-        await tauriCore.invoke("set_window_mode", { expanded });
+    window.switchMode = function(expanded) {
+      const isExp = Boolean(expanded);
+      const collapsedEl = document.getElementById("collapsed-view");
+      const expandedEl = document.getElementById("expanded-view");
+
+      if (isExp) {
+        if (collapsedEl) {
+          collapsedEl.classList.add("hidden");
+          collapsedEl.style.display = "none";
+        }
+        if (expandedEl) {
+          expandedEl.classList.remove("hidden");
+          expandedEl.style.display = "flex";
+        }
+      } else {
+        if (expandedEl) {
+          expandedEl.classList.add("hidden");
+          expandedEl.style.display = "none";
+        }
+        if (collapsedEl) {
+          collapsedEl.classList.remove("hidden");
+          collapsedEl.style.display = "flex";
+        }
       }
-      document.getElementById("collapsed-view").classList.toggle("hidden", expanded);
-      const exp = document.getElementById("expanded-view");
-      exp.classList.toggle("hidden", !expanded);
-      exp.classList.toggle("flex", expanded);
-      if (window.lucide) window.lucide.createIcons();
+
+      if (window.lucide) {
+        try { window.lucide.createIcons(); } catch (_) {}
+      }
+
+      if (tauriCore) {
+        tauriCore.invoke("set_window_mode", { expanded: isExp }).catch((err) => {
+          console.warn("set_window_mode invoke error:", err);
+        });
+      }
     };
 
     window.handleMicToggle = function() {

@@ -12,13 +12,13 @@
       {
         "title": "VoiceFlow",
         "label": "main",
-        "width": 380,
-        "height": 640,
+        "width": 320,
+        "height": 70,
         "decorations": false,
         "transparent": true,
         "alwaysOnTop": true,
         "shadow": false,
-        "resizable": false,
+        "resizable": true,
         "center": true
       }
     ],

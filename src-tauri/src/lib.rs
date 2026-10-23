@@ -200,23 +200,20 @@ fn get_target_window_title() -> Result<String, String> {
 /// Dynamically switch window between Collapsed pill and Expanded mode
 /// Supports both { mode: "collapsed" | "expanded" } and { expanded: true | false }
 #[tauri::command]
-fn set_window_mode(app: AppHandle, arg: serde_json::Value) -> Result<(), String> {
-    let is_expanded = if let Some(exp) = arg.get("expanded").and_then(|v| v.as_bool()) {
-        exp
-    } else if let Some(m) = arg.get("mode").and_then(|v| v.as_str()) {
-        m == "expanded"
-    } else {
-        false
-    };
+fn set_window_mode(
+    app: AppHandle,
+    expanded: Option<bool>,
+    mode: Option<String>,
+) -> Result<(), String> {
+    let is_expanded = expanded.unwrap_or_else(|| mode.as_deref() == Some("expanded"));
 
     if let Some(window) = app.get_webview_window("main") {
-        if !is_expanded {
-            let _ = window.set_size(tauri::LogicalSize::new(320.0, 70.0));
-            let _ = window.set_resizable(false);
+        let _ = window.set_resizable(true);
+        if is_expanded {
+            let _ = window.set_size(tauri::LogicalSize::new(380.0, 710.0));
             let _ = window.set_always_on_top(true);
         } else {
-            let _ = window.set_size(tauri::LogicalSize::new(380.0, 700.0));
-            let _ = window.set_resizable(false);
+            let _ = window.set_size(tauri::LogicalSize::new(320.0, 70.0));
             let _ = window.set_always_on_top(true);
         }
     }
