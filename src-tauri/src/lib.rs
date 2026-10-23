@@ -309,6 +309,37 @@ fn minimize_window(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+static ENCODING_MODE: RwLock<String> = RwLock::new(String::new());
+
+/// Set the Bengali typing encoding mode ("unicode" or "ansi")
+#[tauri::command]
+fn set_encoding_mode(app: AppHandle, mode: String) -> Result<(), String> {
+    let mode_val = if mode.to_lowercase() == "ansi" {
+        "ansi".to_string()
+    } else {
+        "unicode".to_string()
+    };
+    if let Ok(mut lock) = ENCODING_MODE.write() {
+        *lock = mode_val.clone();
+    }
+    let _ = app.emit("encoding-mode-changed", mode_val);
+    Ok(())
+}
+
+/// Get the current encoding mode
+#[tauri::command]
+fn get_encoding_mode() -> Result<String, String> {
+    if let Ok(lock) = ENCODING_MODE.read() {
+        if lock.is_empty() {
+            Ok("unicode".to_string())
+        } else {
+            Ok(lock.clone())
+        }
+    } else {
+        Ok("unicode".to_string())
+    }
+}
+
 /// Close the application
 #[tauri::command]
 fn close_app(app: AppHandle) -> Result<(), String> {
@@ -346,6 +377,77 @@ pub fn run() {
                 let _ = app.global_shortcut().register(shortcut);
             }
 
+            // System Tray with Unicode / ANSI mode switching and quick controls
+            use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
+            use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+
+            let show_i = MenuItem::with_id(app, "show_window", "Open VoiceFlow", true, None::<&str>)?;
+            let toggle_i = MenuItem::with_id(app, "toggle_mic", "Toggle Mic (Alt+V)", true, None::<&str>)?;
+            let sep1 = PredefinedMenuItem::separator(app)?;
+            let mode_uni = MenuItem::with_id(app, "mode_unicode", "✔ Unicode Mode (Modern/Web)", true, None::<&str>)?;
+            let mode_ansi = MenuItem::with_id(app, "mode_ansi", "  ANSI Mode (Bijoy/SutonnyMJ)", true, None::<&str>)?;
+            let sep2 = PredefinedMenuItem::separator(app)?;
+            let quit_i = MenuItem::with_id(app, "quit", "Quit VoiceFlow", true, None::<&str>)?;
+
+            let menu = Menu::with_items(
+                app,
+                &[
+                    &show_i,
+                    &toggle_i,
+                    &sep1,
+                    &mode_uni,
+                    &mode_ansi,
+                    &sep2,
+                    &quit_i,
+                ],
+            )?;
+
+            let mut tray_builder = TrayIconBuilder::with_id("voiceflow-tray")
+                .menu(&menu)
+                .show_menu_on_left_click(false)
+                .tooltip("VoiceFlow - Voice Typing Anywhere")
+                .on_menu_event(|app, event| match event.id().as_ref() {
+                    "mode_unicode" => {
+                        let _ = set_encoding_mode(app.clone(), "unicode".to_string());
+                    }
+                    "mode_ansi" => {
+                        let _ = set_encoding_mode(app.clone(), "ansi".to_string());
+                    }
+                    "toggle_mic" => {
+                        let _ = app.emit("toggle-listening", ());
+                    }
+                    "show_window" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                    "quit" => {
+                        app.exit(0);
+                    }
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                });
+
+            if let Some(icon) = app.default_window_icon() {
+                tray_builder = tray_builder.icon(icon.clone());
+            }
+
+            let _tray = tray_builder.build(app)?;
+
             start_window_tracker(app.handle().clone());
             Ok(())
         })
@@ -361,7 +463,9 @@ pub fn run() {
             set_autostart,
             register_shortcut,
             minimize_window,
-            close_app
+            close_app,
+            set_encoding_mode,
+            get_encoding_mode
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
