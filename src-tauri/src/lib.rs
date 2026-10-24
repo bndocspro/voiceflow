@@ -8,17 +8,10 @@ use tauri_plugin_updater::UpdaterExt;
 
 static LAST_TARGET_HWND: AtomicIsize = AtomicIsize::new(0);
 static VOICEFLOW_HWND: AtomicIsize = AtomicIsize::new(0);
-static LIVE_TOAST_HWND: AtomicIsize = AtomicIsize::new(0);
-static LIVE_TOAST_X: AtomicIsize = AtomicIsize::new(-1);
-static LIVE_TOAST_Y: AtomicIsize = AtomicIsize::new(-1);
 static LAST_TARGET_TITLE: RwLock<String> = RwLock::new(String::new());
 
 #[cfg(target_os = "windows")]
-use windows_sys::Win32::Foundation::{HWND, POINT};
-#[cfg(target_os = "windows")]
-use windows_sys::Win32::Graphics::Gdi::{
-    GetMonitorInfoW, MonitorFromPoint, MONITORINFO, MONITOR_DEFAULTTONEAREST,
-};
+use windows_sys::Win32::Foundation::HWND;
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
     SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP, KEYEVENTF_UNICODE,
@@ -26,9 +19,7 @@ use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
 };
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::UI::WindowsAndMessaging::{
-    GetAncestor, GetCursorPos, GetForegroundWindow, GetWindowTextW, SetForegroundWindow,
-    SetWindowPos, WindowFromPoint, GA_ROOT, HWND_TOPMOST, SWP_NOACTIVATE, SWP_NOSIZE,
-    SWP_SHOWWINDOW,
+    GetForegroundWindow, GetWindowTextW, SetForegroundWindow,
 };
 
 #[cfg(target_os = "windows")]
@@ -51,8 +42,7 @@ fn start_window_tracker(app: AppHandle) {
             {
                 let fg = unsafe { GetForegroundWindow() };
                 let my_hwnd = VOICEFLOW_HWND.load(Ordering::Relaxed) as HWND;
-                let toast_hwnd = LIVE_TOAST_HWND.load(Ordering::Relaxed) as HWND;
-                if fg != 0 as _ && fg != my_hwnd && fg != toast_hwnd {
+                if fg != 0 as _ && fg != my_hwnd {
                     let prev = LAST_TARGET_HWND.swap(fg as isize, Ordering::Relaxed);
                     if prev != fg as isize {
                         let title = get_window_title(fg);
@@ -251,110 +241,55 @@ fn resize_window_by(app: AppHandle, delta_x: f64, delta_y: f64) -> Result<(), St
     Ok(())
 }
 
-/// Computes a screen position for the live-caption toast: near the mouse
-/// cursor, clamped inside the work area of the nearest monitor.
-#[cfg(target_os = "windows")]
-fn compute_toast_anchor(app: &AppHandle, cursor: POINT) -> Option<(i32, i32)> {
-    let toast = app.get_webview_window("live-toast")?;
-    let toast_hwnd = LIVE_TOAST_HWND.load(Ordering::Relaxed) as HWND;
-    let main_hwnd = VOICEFLOW_HWND.load(Ordering::Relaxed) as HWND;
+// Saved size of the collapsed pill so it can be restored after dictation
+static PILL_RESTORE_W: AtomicIsize = AtomicIsize::new(-1);
+static PILL_RESTORE_H: AtomicIsize = AtomicIsize::new(-1);
 
-    let mut x = cursor.x + 28;
-    let mut y = cursor.y + 28;
-
-    // If the cursor is over a VoiceFlow window (mic button was just clicked),
-    // hang the toast right below the main pill instead of under the cursor.
-    let hovered_root = unsafe { GetAncestor(WindowFromPoint(cursor), GA_ROOT) };
-    if hovered_root == main_hwnd || hovered_root == toast_hwnd {
-        let main = app.get_webview_window("main")?;
-        let pos = main.outer_position().ok()?;
-        let size = main.outer_size().ok()?;
-        x = pos.x + 4;
-        y = pos.y + size.height as i32 + 10;
-    }
-
-    // Keep the whole toast visible inside the nearest monitor's work area
-    let size = toast.outer_size().ok()?;
-    let w = size.width as i32;
-    let h = size.height as i32;
-    unsafe {
-        let mut info: MONITORINFO = std::mem::zeroed();
-        info.cbSize = std::mem::size_of::<MONITORINFO>() as u32;
-        let monitor = MonitorFromPoint(cursor, MONITOR_DEFAULTTONEAREST);
-        if !monitor.is_null() && GetMonitorInfoW(monitor, &mut info) != 0 {
-            let work = &info.rcWork;
-            x = x.max(work.left + 8).min(work.right - w - 8);
-            y = y.max(work.top + 8).min(work.bottom - h - 8);
+/// Widen the collapsed pill while dictating so live transcription text fits
+/// inside it. The previous size is remembered and only pill-sized windows
+/// (short height) are touched — the expanded panel is never affected.
+#[tauri::command]
+fn begin_pill_dictation(app: AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("main") {
+        if let Ok(size) = window.inner_size() {
+            let scale = window.scale_factor().unwrap_or(1.0);
+            let height_logical = size.height as f64 / scale;
+            if height_logical > 160.0 {
+                return Ok(()); // expanded panel — leave it alone
+            }
+            let target_w = (520.0 * scale) as u32;
+            if size.width < target_w {
+                PILL_RESTORE_W.store(size.width as isize, Ordering::Relaxed);
+                PILL_RESTORE_H.store(size.height as isize, Ordering::Relaxed);
+                let _ = window.set_size(tauri::PhysicalSize::new(target_w, size.height));
+            } else {
+                // pill is already wide enough — nothing was changed, so make
+                // sure no stale restore size survives for end_pill_dictation
+                PILL_RESTORE_W.store(-1, Ordering::Relaxed);
+                PILL_RESTORE_H.store(-1, Ordering::Relaxed);
+            }
         }
     }
-    Some((x, y))
+    Ok(())
 }
 
-/// Show the live-caption toast. With `anchor = true` it re-anchors next to
-/// the mouse cursor (when a dictation session starts); otherwise it just
-/// re-appears at its last position without stealing window focus.
+/// Restore the collapsed pill to its pre-dictation size
 #[tauri::command]
-fn show_live_toast(app: AppHandle, anchor: Option<bool>) -> Result<(), String> {
-    let Some(toast) = app.get_webview_window("live-toast") else {
+fn end_pill_dictation(app: AppHandle) -> Result<(), String> {
+    let w = PILL_RESTORE_W.swap(-1, Ordering::Relaxed);
+    let h = PILL_RESTORE_H.swap(-1, Ordering::Relaxed);
+    if w <= 0 || h <= 0 {
         return Ok(());
-    };
-
-    #[cfg(target_os = "windows")]
-    {
-        let hwnd = LIVE_TOAST_HWND.load(Ordering::Relaxed) as HWND;
-        if hwnd != 0 as _ {
-            if anchor.unwrap_or(false) {
-                let mut pt = POINT { x: 0, y: 0 };
-                if unsafe { GetCursorPos(&mut pt) } != 0 {
-                    if let Some((x, y)) = compute_toast_anchor(&app, pt) {
-                        LIVE_TOAST_X.store(x as isize, Ordering::Relaxed);
-                        LIVE_TOAST_Y.store(y as isize, Ordering::Relaxed);
-                    }
-                }
-            }
-            let x = LIVE_TOAST_X.load(Ordering::Relaxed) as i32;
-            let y = LIVE_TOAST_Y.load(Ordering::Relaxed) as i32;
-            if x >= 0 && y >= 0 {
-                unsafe {
-                    // SWP_NOACTIVATE keeps keyboard focus on the app that
-                    // receives the typed text
-                    SetWindowPos(
-                        hwnd,
-                        HWND_TOPMOST,
-                        x,
-                        y,
-                        0,
-                        0,
-                        SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW,
-                    );
-                }
-                return Ok(());
+    }
+    if let Some(window) = app.get_webview_window("main") {
+        if let Ok(size) = window.inner_size() {
+            let scale = window.scale_factor().unwrap_or(1.0);
+            if (size.height as f64 / scale) <= 160.0 {
+                // only restore while the window is still a collapsed pill
+                let _ = window.set_size(tauri::PhysicalSize::new(w as u32, h as u32));
             }
         }
     }
-
-    let _ = toast.show();
-    Ok(())
-}
-
-/// Hide the live-caption toast
-#[tauri::command]
-fn hide_live_toast(app: AppHandle) -> Result<(), String> {
-    if let Some(toast) = app.get_webview_window("live-toast") {
-        let _ = toast.hide();
-    }
-    Ok(())
-}
-
-/// Push real-time transcription text into the live-caption toast
-/// kind: "status" | "interim" | "final"
-#[tauri::command]
-fn update_live_toast(app: AppHandle, kind: String, text: String) -> Result<(), String> {
-    let _ = app.emit_to(
-        "live-toast",
-        "live-toast",
-        serde_json::json!({ "kind": kind, "text": text }),
-    );
     Ok(())
 }
 
@@ -552,19 +487,6 @@ pub fn run() {
                 let _ = window.set_always_on_top(true);
             }
 
-            // Live caption toast overlay: transparent, click-through and it
-            // must never take keyboard focus away from the typing target app
-            if let Some(toast) = app.get_webview_window("live-toast") {
-                #[cfg(target_os = "windows")]
-                {
-                    if let Ok(hwnd) = toast.hwnd() {
-                        LIVE_TOAST_HWND.store(hwnd.0 as isize, Ordering::Relaxed);
-                    }
-                }
-                let _ = toast.set_ignore_cursor_events(true);
-                let _ = toast.set_focusable(false);
-            }
-
             // Register global hotkey Alt+V
             if let Ok(shortcut) = "Alt+KeyV".parse::<tauri_plugin_global_shortcut::Shortcut>() {
                 let _ = app.global_shortcut().register(shortcut);
@@ -652,9 +574,8 @@ pub fn run() {
             get_target_window_title,
             set_window_mode,
             resize_window_by,
-            show_live_toast,
-            hide_live_toast,
-            update_live_toast,
+            begin_pill_dictation,
+            end_pill_dictation,
             toggle_listening,
             set_autostart,
             register_shortcut,
