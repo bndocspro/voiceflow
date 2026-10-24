@@ -198,12 +198,17 @@ body {
   justify-content: space-between;
   padding-bottom: 2px;
   cursor: grab;
+  width: 100%;
+  min-width: 0;
+  gap: 8px;
 }
 
 .app-brand {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  flex-shrink: 0;
 }
 
 .brand-icon {
@@ -211,6 +216,7 @@ body {
   align-items: center;
   gap: 2px;
   height: 18px;
+  flex-shrink: 0;
 }
 
 .brand-bar {
@@ -229,12 +235,16 @@ body {
   font-weight: 700;
   color: var(--text-dark);
   letter-spacing: -0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
   gap: 4px;
+  flex-shrink: 0;
 }
 
 .btn-icon-subtle {

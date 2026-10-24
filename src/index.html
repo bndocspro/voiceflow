@@ -438,37 +438,31 @@
        class="relative hidden w-full h-full min-w-[280px] min-h-[420px] bg-white rounded-[24px] panel-shadow border border-slate-200/80 flex flex-col justify-between p-[18px]">
     
     <!-- Top Header Bar (Draggable Region) -->
-    <div data-tauri-drag-region class="flex items-center justify-between pb-1 cursor-move">
-      <div data-tauri-drag-region class="flex items-center gap-2 pointer-events-none">
+    <div data-tauri-drag-region class="w-full flex items-center justify-between pb-1 cursor-move min-w-0 gap-2">
+      <div data-tauri-drag-region class="flex items-center gap-2 pointer-events-none min-w-0 shrink-0">
         <!-- Custom 5-Bar VoiceFlow Logo SVG -->
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="shrink-0">
           <rect x="1" y="8.5" width="2.2" height="3" rx="1.1" fill="#38A179"/>
           <rect x="4.8" y="5" width="2.2" height="10" rx="1.1" fill="#1B694E"/>
           <rect x="8.6" y="2" width="2.4" height="16" rx="1.2" fill="#257D5E"/>
           <rect x="12.5" y="6" width="2.2" height="8" rx="1.1" fill="#1B694E"/>
           <rect x="16.3" y="8.5" width="2.2" height="3" rx="1.1" fill="#38A179"/>
         </svg>
-        <span data-tauri-drag-region class="font-semibold text-[#1E293B] text-[15.5px] tracking-[-0.015em]">
+        <span data-tauri-drag-region class="font-semibold text-[#1E293B] text-[15.5px] tracking-[-0.015em] truncate">
           VoiceFlow
         </span>
-        <!-- Active Target Window Indicator Badge -->
-        <span id="target-window-badge" title="Active Window receiving your voice typing"
-              class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60 max-w-[120px] truncate">
-          <span class="status-pulse-dot"></span>
-          <span id="target-window-text" class="truncate">Active App</span>
-        </span>
       </div>
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-1 shrink-0">
         <button id="panel-mode-badge" onclick="toggleEncodingMode()" title="Bangla Encoding Mode (Click to switch)"
-                class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/50 cursor-pointer transition mr-1">
+                class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/50 cursor-pointer transition shrink-0">
           Unicode
         </button>
         <button onclick="toggleDarkMode()" title="Toggle Dark/Light Mode"
-                class="w-7 h-7 rounded-full hover:bg-slate-100 text-[#64748B] hover:text-[#0F172A] flex items-center justify-center transition">
+                class="w-7 h-7 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-[#64748B] hover:text-[#0F172A] dark:hover:text-slate-200 flex items-center justify-center transition shrink-0">
           <i id="theme-btn-icon" data-lucide="moon" class="w-[15px] h-[15px] stroke-[2]"></i>
         </button>
         <button onclick="switchMode(false)" title="Collapse to floating pill"
-                class="w-7 h-7 rounded-full hover:bg-slate-100 text-[#64748B] hover:text-[#0F172A] flex items-center justify-center transition">
+                class="w-7 h-7 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-[#64748B] hover:text-[#0F172A] dark:hover:text-slate-200 flex items-center justify-center transition shrink-0">
           <i data-lucide="x" class="w-[17px] h-[17px] stroke-[2]"></i>
         </button>
       </div>
@@ -485,16 +479,24 @@
       </div>
 
       <div class="flex flex-col flex-1 min-w-0">
-        <!-- Mini Circle-Mic Badge + Status -->
-        <div class="flex items-center gap-1.5 mb-2">
-          <span id="panel-status-dot" class="w-[15px] h-[15px] rounded-full bg-slate-400 text-white flex items-center justify-center shrink-0 transition-colors">
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-            </svg>
-          </span>
-          <span id="panel-status" class="text-[13.5px] font-medium text-slate-600 dark:text-slate-300 tracking-[-0.01em]">
-            Ready
+        <!-- Mini Circle-Mic Badge + Status & Active Window -->
+        <div class="flex items-center justify-between gap-1.5 mb-2 min-w-0">
+          <div class="flex items-center gap-1.5 shrink-0">
+            <span id="panel-status-dot" class="w-[15px] h-[15px] rounded-full bg-slate-400 text-white flex items-center justify-center shrink-0 transition-colors">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              </svg>
+            </span>
+            <span id="panel-status" class="text-[13.5px] font-medium text-slate-600 dark:text-slate-300 tracking-[-0.01em]">
+              Ready
+            </span>
+          </div>
+          <!-- Active Target Window Indicator Badge -->
+          <span id="target-window-badge" title="Active Window receiving your voice typing"
+                class="hidden inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-medium bg-white/80 dark:bg-slate-800/80 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/50 max-w-[130px] truncate shrink-0">
+            <span class="status-pulse-dot"></span>
+            <span id="target-window-text" class="truncate">Active App</span>
           </span>
         </div>
         <!-- 25-Bar Multi-Tone Waveform -->
@@ -554,26 +556,6 @@
     <div class="flex-1 overflow-y-auto my-2 pr-0.5 space-y-2.5 min-h-0">
       <!-- TAB 1: SETTINGS CARD (Default Active) -->
       <div id="tab-settings" class="bg-[#F7FAF9] border border-[#E8EFEC] rounded-[18px] p-3.5 space-y-2.5 text-[12.5px]">
-      <!-- Language -->
-      <div class="flex items-center justify-between">
-        <span class="text-[#334155] font-medium">Language</span>
-        <div class="relative w-[138px]">
-          <select id="language-select"
-                  class="w-full appearance-none bg-white border border-[#E2E8F0] rounded-[10px] pl-3 pr-7 py-1.5 text-[12px] text-[#1E293B] font-medium shadow-[0_1px_2px_rgba(0,0,0,0.03)] focus:outline-none focus:border-[#2E7D62]">
-            <option value="en-US">English (US)</option>
-            <option value="en-GB">English (UK)</option>
-            <option value="bn-BD">Bengali (BD)</option>
-            <option value="bn-IN">Bengali (IN)</option>
-            <option value="es-ES">Spanish (ES)</option>
-            <option value="fr-FR">French (FR)</option>
-            <option value="de-DE">German (DE)</option>
-            <option value="hi-IN">Hindi (IN)</option>
-            <option value="ja-JP">Japanese (JP)</option>
-          </select>
-          <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-        </div>
-      </div>
-
       <!-- Typing Encoding (Unicode / ANSI) -->
       <div class="flex items-center justify-between">
         <span class="text-[#334155] font-medium">Bangla Encoding</span>
@@ -582,21 +564,6 @@
                   class="w-full appearance-none bg-white border border-[#E2E8F0] rounded-[10px] pl-2.5 pr-7 py-1.5 text-[11.5px] text-[#1E293B] font-medium shadow-[0_1px_2px_rgba(0,0,0,0.03)] focus:outline-none focus:border-[#2E7D62]">
             <option value="unicode">Unicode (Avro/Web)</option>
             <option value="ansi">ANSI (Bijoy / SutonnyMJ)</option>
-          </select>
-          <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-        </div>
-      </div>
-
-      <!-- Voice -->
-      <div class="flex items-center justify-between">
-        <span class="text-[#334155] font-medium">Voice</span>
-        <div class="relative w-[138px]">
-          <select id="voice-select"
-                  class="w-full appearance-none bg-white border border-[#E2E8F0] rounded-[10px] pl-3 pr-7 py-1.5 text-[12px] text-[#1E293B] font-medium shadow-[0_1px_2px_rgba(0,0,0,0.03)] focus:outline-none focus:border-[#2E7D62]">
-            <option value="Jenny">Jenny (Female)</option>
-            <option value="Aria">Aria (Female)</option>
-            <option value="Guy">Guy (Male)</option>
-            <option value="Davis">Davis (Male)</option>
           </select>
           <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
         </div>
@@ -646,6 +613,21 @@
       <div class="flex items-center justify-between">
         <span class="text-[#334155] font-medium">Start on System Boot</span>
         <div id="toggle-boot" onclick="toggleAutostart(this)" class="vf-toggle" data-enabled="false"></div>
+      </div>
+
+      <!-- App Auto-Updates (GitHub Releases) -->
+      <div class="flex items-center justify-between pt-1.5 border-t border-[#E2E8F0]">
+        <span class="text-[#334155] font-medium flex items-center gap-1.5">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-600"></i>
+          <span>App Updates</span>
+        </span>
+        <div class="flex items-center gap-2">
+          <span id="app-version" class="text-[10.5px] text-slate-400 font-medium">v--</span>
+          <button id="check-updates-btn" onclick="checkForUpdates()" title="Check for new version & auto install"
+                  class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#1D6E53] hover:bg-[#165942] text-white shadow-sm transition-transform active:scale-95 cursor-pointer">
+            Check
+          </button>
+        </div>
       </div>
     </div>
 
@@ -1070,10 +1052,10 @@
       // 2. Update Expanded Panel header badge
       const panelBadge = document.getElementById("panel-mode-badge");
       if (panelBadge) {
-        panelBadge.innerText = m === 'ansi' ? 'ANSI (Bijoy)' : 'Unicode';
+        panelBadge.innerText = m === 'ansi' ? 'ANSI' : 'Unicode';
         panelBadge.className = m === 'ansi'
-          ? "px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700/50 cursor-pointer transition mr-1"
-          : "px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/50 cursor-pointer transition mr-1";
+          ? "px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700/50 cursor-pointer transition shrink-0"
+          : "px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/50 cursor-pointer transition shrink-0";
       }
 
       // 3. Update Settings dropdown
@@ -1675,6 +1657,94 @@
             txt.innerText = "Desktop / App";
           }
         }
+      });
+    }
+
+    // =========================================================================
+    // AUTO-UPDATES (GitHub Releases via Tauri Updater)
+    // Flow: Check -> if newer version found -> auto download & install -> restart
+    // =========================================================================
+    let isUpdateInProgress = false;
+
+    // Show current app version next to the Check button
+    (async () => {
+      const el = document.getElementById("app-version");
+      if (!el) return;
+      try {
+        if (window.__TAURI__?.app?.getVersion) {
+          el.innerText = "v" + await window.__TAURI__.app.getVersion();
+        } else {
+          el.innerText = "v1.0.0";
+        }
+      } catch (_) {
+        el.innerText = "v1.0.0";
+      }
+    })();
+
+    function setUpdateButton(state, text) {
+      const btn = document.getElementById("check-updates-btn");
+      if (!btn) return;
+      btn.dataset.state = state;
+      if (state === "busy") {
+        btn.disabled = true;
+        btn.className = "px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-400 text-white shadow-sm transition cursor-not-allowed";
+        btn.innerText = text;
+      } else {
+        btn.disabled = false;
+        btn.className = "px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#1D6E53] hover:bg-[#165942] text-white shadow-sm transition-transform active:scale-95 cursor-pointer";
+        btn.innerText = text;
+      }
+    }
+
+    window.checkForUpdates = async function() {
+      if (isUpdateInProgress || !tauriCore) return;
+      isUpdateInProgress = true;
+      setUpdateButton("busy", "Checking...");
+
+      try {
+        const update = await tauriCore.invoke("check_update");
+
+        if (!update) {
+          setUpdateButton("idle", "Up to date ✓");
+          showToast("You're on the latest version");
+          setTimeout(() => setUpdateButton("idle", "Check"), 2500);
+          return;
+        }
+
+        // New version found -> auto download + install + restart
+        setUpdateButton("busy", "Downloading...");
+        showToast(`Update v${update.version} found — auto installing`);
+
+        await tauriCore.invoke("download_and_install_update");
+        // App restarts itself after successful install
+      } catch (err) {
+        setUpdateButton("idle", "Check");
+        showToast(`Update failed: ${String(err).slice(0, 60)}`);
+      } finally {
+        isUpdateInProgress = false;
+      }
+    };
+
+    // Live download progress -> show percentage on the Check button
+    if (tauriEvent) {
+      tauriEvent.listen("update-download-progress", (event) => {
+        const { downloaded, total } = event.payload || {};
+        if (total) {
+          const pct = Math.min(100, Math.round((downloaded / total) * 100));
+          setUpdateButton("busy", `Installing ${pct}%`);
+        } else {
+          setUpdateButton("busy", "Installing...");
+        }
+      });
+
+      tauriEvent.listen("update-downloaded", () => {
+        setUpdateButton("busy", "Restarting...");
+        showToast("Update installed! Restarting VoiceFlow...");
+      });
+
+      tauriEvent.listen("update-failed", () => {
+        setUpdateButton("idle", "Check");
+        isUpdateInProgress = false;
       });
     }
 

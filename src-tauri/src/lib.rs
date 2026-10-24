@@ -4,6 +4,7 @@ use std::thread;
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_global_shortcut::GlobalShortcutExt;
+use tauri_plugin_updater::UpdaterExt;
 
 static LAST_TARGET_HWND: AtomicIsize = AtomicIsize::new(0);
 static VOICEFLOW_HWND: AtomicIsize = AtomicIsize::new(0);
@@ -347,11 +348,73 @@ fn close_app(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
+/// Check GitHub releases for a newer VoiceFlow version
+#[tauri::command]
+async fn check_update(app: AppHandle) -> Result<Option<UpdateInfo>, String> {
+    let updater = app.updater().map_err(|e| e.to_string())?;
+    match updater.check().await.map_err(|e| e.to_string())? {
+        Some(update) => Ok(Some(UpdateInfo {
+            current_version: update.current_version.clone(),
+            version: update.version.clone(),
+            notes: update.body.clone().unwrap_or_default(),
+        })),
+        None => Ok(None),
+    }
+}
+
+#[derive(serde::Serialize)]
+struct UpdateInfo {
+    current_version: String,
+    version: String,
+    notes: String,
+}
+
+/// Download + silently install the latest update, then restart the app.
+/// Emits "update-download-progress" events ({ downloaded, total }) to the UI.
+#[tauri::command]
+async fn download_and_install_update(app: AppHandle) -> Result<(), String> {
+    // Re-check (in case the user clicked a while after checking)
+    let updater = app.updater().map_err(|e| e.to_string())?;
+    let update = updater
+        .check()
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| "No update available".to_string())?;
+
+    let emitter = app.clone();
+    let finished = app.clone();
+    let emitter_failed = app.clone();
+
+    update
+        .download_and_install(
+            move |chunk, total| {
+                static DOWNLOADED: AtomicIsize = AtomicIsize::new(0);
+                let done = DOWNLOADED.fetch_add(chunk as isize, Ordering::Relaxed) as u64
+                    + chunk as u64;
+                let _ = emitter.emit(
+                    "update-download-progress",
+                    serde_json::json!({ "downloaded": done, "total": total }),
+                );
+            },
+            move || {
+                let _ = finished.emit("update-downloaded", ());
+            },
+        )
+        .await
+        .map_err(|e| {
+            let _ = emitter_failed.emit("update-failed", e.to_string());
+            e.to_string()
+        })?;
+
+    // Restarts the app and applies the pending Windows installer
+    app.restart();
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(|app, _shortcut, event| {
@@ -465,7 +528,9 @@ pub fn run() {
             minimize_window,
             close_app,
             set_encoding_mode,
-            get_encoding_mode
+            get_encoding_mode,
+            check_update,
+            download_and_install_update
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

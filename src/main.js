@@ -71,10 +71,10 @@ let settings = {
 
 // Initialize UI with saved settings
 function loadSettings() {
-  settingLanguage.value = settings.language;
-  settingVoice.value = settings.voice;
-  settingSpeed.value = settings.speed;
-  speedVal.textContent = `${settings.speed.toFixed(1)}x`;
+  if (settingLanguage) settingLanguage.value = settings.language;
+  if (settingVoice) settingVoice.value = settings.voice;
+  if (settingSpeed) settingSpeed.value = settings.speed;
+  if (speedVal) speedVal.textContent = `${settings.speed.toFixed(1)}x`;
   settingPunctuation.checked = settings.autoPunctuation;
   settingDirectType.checked = settings.directType;
   settingNotifications.checked = settings.notifications;
@@ -333,14 +333,14 @@ tabButtons.forEach(btn => {
 });
 
 // Settings Event Listeners
-settingLanguage.addEventListener('change', (e) => {
+settingLanguage?.addEventListener('change', (e) => {
   settings.language = e.target.value;
   localStorage.setItem('vf_lang', settings.language);
   voiceEngine.setLanguage(settings.language);
   showToast(`Language set to ${e.target.options[e.target.selectedIndex].text}`);
 });
 
-settingVoice.addEventListener('change', (e) => {
+settingVoice?.addEventListener('change', (e) => {
   settings.voice = e.target.value;
   localStorage.setItem('vf_voice', settings.voice);
 });
