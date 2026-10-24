@@ -118,28 +118,6 @@
       animation: cursorBlink 1s infinite;
     }
 
-    /* Custom Voice Speed Slider */
-    input[type="range"].vf-slider {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 110px;
-      height: 4px;
-      border-radius: 999px;
-      background: linear-gradient(to right, #1D6E53 0%, #1D6E53 33%, #DCE3E0 33%, #DCE3E0 100%);
-      outline: none;
-    }
-    input[type="range"].vf-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: #FFFFFF;
-      border: 3.5px solid #1D6E53;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-      cursor: pointer;
-    }
-
     /* Custom Toggle Switch */
     .vf-toggle {
       position: relative;
@@ -197,6 +175,11 @@
       opacity: 1;
       transform: translateX(-50%) translateY(0);
     }
+
+    /* Collapsed Pill Live Caption States */
+    #pill-status { transition: color 0.2s ease; }
+    #pill-status.pill-final-flash { color: #059669; font-weight: 600; }
+    body.dark #pill-status.pill-final-flash { color: #34D399; }
 
     /* Dark Mode Theme Tokens */
     body.dark {
@@ -326,18 +309,19 @@
       if (window.lucide) window.lucide.createIcons();
     };
 
-    window.updateSpeedSlider = function(slider) {
-      if (!slider) return;
-      const min = parseFloat(slider.min || 0.5);
-      const max = parseFloat(slider.max || 2.0);
-      const val = parseFloat(slider.value || 1.0);
-      const pct = ((val - min) / (max - min)) * 100;
-      slider.style.background = `linear-gradient(to right, #1D6E53 0%, #1D6E53 ${pct}%, #DCE3E0 ${pct}%, #DCE3E0 100%)`;
-      const valEl = document.getElementById("speed-val");
-      if (valEl) valEl.innerText = val.toFixed(1) + "x";
-      if (window.saveUserPreference) {
-        window.saveUserPreference('speed', val);
-      }
+    window.switchTab = function(tab) {
+      ["settings", "history", "more"].forEach((t) => {
+        const content = document.getElementById(`tab-${t}`);
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const active = t === tab;
+        if (content) content.classList.toggle("hidden", !active);
+        if (btn) {
+          btn.className = active
+            ? "flex-1 py-1.5 px-3 rounded-full bg-[#2E7D62] text-white text-[12.5px] font-medium flex items-center justify-center gap-1.5 shadow-sm transition"
+            : "flex-1 py-1.5 px-3 rounded-full text-[#475569] hover:text-[#0F172A] text-[12.5px] font-medium flex items-center justify-center gap-1.5 transition";
+        }
+      });
+      if (window.lucide) window.lucide.createIcons();
     };
 
     window.switchMode = function(expanded) {
@@ -615,16 +599,6 @@
         </div>
       </div>
 
-      <!-- Voice Speed -->
-      <div class="flex items-center justify-between pt-0.5">
-        <span class="text-[#334155] font-medium">Voice Speed</span>
-        <div class="flex items-center gap-2.5 w-[138px] justify-end">
-          <input id="speed-range" type="range" min="0.5" max="2.0" step="0.1" value="1.0"
-                 class="vf-slider" oninput="updateSpeedSlider(this)" />
-          <span id="speed-val" class="text-[12px] font-medium text-[#334155] w-7 text-right">1.0x</span>
-        </div>
-      </div>
-
       <!-- Dark Theme Mode -->
       <div class="flex items-center justify-between pt-0.5">
         <span class="text-[#334155] font-medium flex items-center gap-1.5">
@@ -794,16 +768,57 @@
     window.showToast = showToast;
 
     // =========================================================================
-    // LIVE CAPTION TOAST (floating near the mouse cursor while dictating)
+    // LIVE CAPTION ENGINE (collapsed pill only)
+    // While dictating, the pill itself widens and shows the live writing,
+    // keeping mic + mode badge + waveform in ONE minimal bar.
+    // The expanded panel shows interim text in its transcript box instead.
     // =========================================================================
-    function liveToastShow(reAnchor) {
-      if (tauriCore) tauriCore.invoke("show_live_toast", { anchor: Boolean(reAnchor) }).catch(() => {});
+    let windowModeExpanded = false;
+
+    function beginPillDictation() {
+      if (tauriCore) tauriCore.invoke("begin_pill_dictation").catch(() => {});
     }
-    function liveToastHide() {
-      if (tauriCore) tauriCore.invoke("hide_live_toast").catch(() => {});
+    function endPillDictation() {
+      if (tauriCore) tauriCore.invoke("end_pill_dictation").catch(() => {});
     }
-    function liveToastUpdate(kind, text) {
-      if (tauriCore) tauriCore.invoke("update_live_toast", { kind: kind, text: text }).catch(() => {});
+
+    function escapeCaptionText(str) {
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    const pillStatusEl = document.getElementById("pill-status");
+    let pillFinalTimer = null;
+
+    // Live caption inside the collapsed pill ("status" | "interim")
+    function setPillCaption(kind, text) {
+      if (!pillStatusEl) return;
+      clearTimeout(pillFinalTimer);
+      pillStatusEl.classList.remove("pill-final-flash");
+      if (kind === "interim") {
+        pillStatusEl.innerHTML = escapeCaptionText(text) + '<span class="emerald-caret"></span>';
+      } else {
+        pillStatusEl.textContent = text || "";
+      }
+    }
+
+    // Confirmed phrase: emerald flash on the pill, then back to listening
+    function flashPillFinal(text) {
+      if (!pillStatusEl) return;
+      clearTimeout(pillFinalTimer);
+      pillStatusEl.classList.remove("pill-final-flash");
+      pillStatusEl.innerHTML = "✓ " + escapeCaptionText(text);
+      pillStatusEl.classList.add("pill-final-flash");
+      pillFinalTimer = setTimeout(() => {
+        pillStatusEl.classList.remove("pill-final-flash");
+        pillStatusEl.textContent = isListening ? "Listening…" : "Press to start ...";
+      }, 1200);
+    }
+
+    function resetPillCaption() {
+      if (!pillStatusEl) return;
+      clearTimeout(pillFinalTimer);
+      pillStatusEl.classList.remove("pill-final-flash");
+      pillStatusEl.textContent = "Press to start ...";
     }
 
     // =========================================================================
@@ -963,16 +978,18 @@
         resetWaveform();
       }
 
-      // Live caption toast follows the mic lifecycle:
-      // session start anchors it near the mouse cursor, idle hides it
-      if (state === "connecting") {
-        liveToastShow(true);
-        liveToastUpdate("status", "Connecting…");
-      } else if (state === "listening") {
-        liveToastShow(false);
-        liveToastUpdate("status", "Listening…");
-      } else {
-        liveToastHide();
+      // Live caption lives inside the collapsed pill; the expanded panel
+      // shows interim text in its own transcript box
+      if (!windowModeExpanded) {
+        if (state === "connecting") {
+          beginPillDictation();
+          setPillCaption("status", "Connecting…");
+        } else if (state === "listening") {
+          setPillCaption("status", "Listening…");
+        } else {
+          endPillDictation();
+          resetPillCaption();
+        }
       }
 
       if (window.lucide) {
@@ -1011,22 +1028,14 @@
       onInterimText: async (interim) => {
         if (!interim || !interim.trim()) return;
 
-        // 0. Stream live writing into the floating cursor toast
-        // (re-show in case it auto-hid after the previous phrase)
-        liveToastShow(false);
-        liveToastUpdate("interim", interim);
+        // 0. Stream live writing into the pill caption (collapsed mode)
+        if (!windowModeExpanded) setPillCaption("interim", interim);
 
         // 1. Update VoiceFlow UI transcript box with real-time italic preview
         const box = document.getElementById("transcript-box");
         if (box) {
           box.innerHTML = `${transcriptText.replace(/\n/g, "<br>")} <span class="italic text-slate-400">${interim}</span><span class="emerald-caret"></span>`;
           box.scrollTop = box.scrollHeight;
-        }
-
-        // 2. Real-time visual feedback on floating pill
-        const pillStatus = document.getElementById("pill-status");
-        if (pillStatus) {
-          pillStatus.innerText = interim.length > 24 ? `${interim.slice(0, 24)}...` : interim;
         }
       },
 
@@ -1057,12 +1066,12 @@
 
         if (ansiCommands.some(cmd => normalized.includes(cmd))) {
           window.setEncodingMode('ansi', true);
-          liveToastUpdate("final", "ANSI (Bijoy) mode on");
+          if (!windowModeExpanded) flashPillFinal("ANSI (Bijoy) mode on");
           return; // Do NOT type the voice command itself!
         }
         if (unicodeCommands.some(cmd => normalized.includes(cmd))) {
           window.setEncodingMode('unicode', true);
-          liveToastUpdate("final", "Unicode mode on");
+          if (!windowModeExpanded) flashPillFinal("Unicode mode on");
           return; // Do NOT type the voice command itself!
         }
 
@@ -1086,8 +1095,8 @@
         renderTranscript();
         addHistoryItem(text);
 
-        // 1.5 Confirm the phrase on the live cursor toast (fades itself out)
-        liveToastUpdate("final", text);
+        // 1.5 Confirm the phrase with a flash on the pill caption
+        if (!windowModeExpanded) flashPillFinal(text);
 
         // 2. Clean, atomic OS Cursor Typing into active target window
         const directType = document.getElementById("toggle-direct")?.dataset.enabled === "true";
@@ -1104,8 +1113,7 @@
           } catch (_) {}
         }
 
-        const pillStatus = document.getElementById("pill-status");
-        if (pillStatus) pillStatus.innerText = "Listening...";
+        // Pill caption restored by flashPillFinal's timer (collapsed mode)
 
         const notify = document.getElementById("toggle-notify")?.dataset.enabled === "true";
         if (notify) showToast(`Typed: "${text.slice(0, 24)}..."`);
@@ -1208,7 +1216,6 @@
       theme: 'light',
       language: 'bn-BD',
       voice: 'Jenny',
-      speed: 1.0,
       soundFeedback: true,
       autoPunctuation: true,
       notifications: true,
@@ -1287,18 +1294,6 @@
     // =========================================================================
     // UI CONTROL HANDLERS (DEFINED FIRST BEFORE PREFERENCE INITIALIZATION)
     // =========================================================================
-    window.updateSpeedSlider = function(slider) {
-      if (!slider) return;
-      const min = parseFloat(slider.min || 0.5);
-      const max = parseFloat(slider.max || 2.0);
-      const val = parseFloat(slider.value || 1.0);
-      const pct = ((val - min) / (max - min)) * 100;
-      slider.style.background = `linear-gradient(to right, #1D6E53 0%, #1D6E53 ${pct}%, #DCE3E0 ${pct}%, #DCE3E0 100%)`;
-      const valEl = document.getElementById("speed-val");
-      if (valEl) valEl.innerText = val.toFixed(1) + "x";
-      saveUserPreference('speed', val);
-    };
-
     window.switchTab = function(tab) {
       ["settings", "history", "more"].forEach((t) => {
         const content = document.getElementById(`tab-${t}`);
@@ -1316,6 +1311,7 @@
 
     window.switchMode = function(expanded) {
       const isExp = Boolean(expanded);
+      windowModeExpanded = isExp;
       const collapsedEl = document.getElementById("collapsed-view");
       const expandedEl = document.getElementById("expanded-view");
 
@@ -1349,6 +1345,15 @@
         tauriCore.invoke("set_window_mode", { expanded: isExp }).catch((err) => {
           console.warn("set_window_mode invoke error:", err);
         });
+      }
+
+      // Collapsed mid-dictation: resume the pill caption after the
+      // set_window_mode resize lands
+      if (isListening && !isExp) {
+        setPillCaption("status", "Listening…");
+        setTimeout(() => {
+          if (!windowModeExpanded && isListening) beginPillDictation();
+        }, 350);
       }
     };
 
@@ -1410,50 +1415,43 @@
       const voiceSel = document.getElementById("voice-select");
       if (voiceSel && prefs.voice) voiceSel.value = prefs.voice;
 
-      // 4. Voice Speed
-      const speedSlider = document.getElementById("speed-range");
-      if (speedSlider && prefs.speed) {
-        speedSlider.value = prefs.speed;
-        window.updateSpeedSlider(speedSlider);
-      }
-
-      // 5. Sound feedback
+      // 4. Sound Feedback
       const soundToggle = document.getElementById("toggle-sound");
       if (soundToggle) {
         soundToggle.dataset.enabled = prefs.soundFeedback ? "true" : "false";
         soundToggle.classList.toggle("active", Boolean(prefs.soundFeedback));
       }
 
-      // 6. Auto Punctuation
+      // 5. Auto Punctuation
       const punctToggle = document.getElementById("toggle-punct");
       if (punctToggle) {
         punctToggle.dataset.enabled = prefs.autoPunctuation ? "true" : "false";
         punctToggle.classList.toggle("active", Boolean(prefs.autoPunctuation));
       }
 
-      // 7. Notifications
+      // 6. Notifications
       const notifyToggle = document.getElementById("toggle-notify");
       if (notifyToggle) {
         notifyToggle.dataset.enabled = prefs.notifications ? "true" : "false";
         notifyToggle.classList.toggle("active", Boolean(prefs.notifications));
       }
 
-      // 8. Direct Typing
+      // 7. Direct Typing
       const directToggle = document.getElementById("toggle-direct");
       if (directToggle) {
         directToggle.dataset.enabled = prefs.directTyping ? "true" : "false";
         directToggle.classList.toggle("active", Boolean(prefs.directTyping));
       }
 
-      // 9. Translate Target
+      // 8. Translate Target
       const transSel = document.getElementById("translate-lang");
       if (transSel && prefs.translateLang) transSel.value = prefs.translateLang;
 
-      // 10. Encoding Mode
+      // 9. Encoding Mode
       const encMode = prefs.encodingMode || localStorage.getItem("VF_ENCODING_MODE") || 'unicode';
       setEncodingMode(encMode);
 
-      // 11. Change listeners to auto-save preferences
+      // 10. Change listeners to auto-save preferences
       langSel?.addEventListener("change", (e) => window.onLanguageChange(e.target.value));
       voiceSel?.addEventListener("change", (e) => saveUserPreference('voice', e.target.value));
       transSel?.addEventListener("change", (e) => saveUserPreference('translateLang', e.target.value));
@@ -1631,7 +1629,7 @@
       if (!clean.trim()) return;
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(clean);
-      utter.rate = parseFloat(document.getElementById("speed-range").value);
+      utter.rate = 1.0;
       window.speechSynthesis.speak(utter);
       showToast("Reading aloud...");
     };
