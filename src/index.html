@@ -381,6 +381,14 @@
     window.handleMicToggle = window.handleMicToggle || function() {
       console.log("VoiceEngine initializing...");
     };
+
+    window.currentEncodingMode = localStorage.getItem("VF_ENCODING_MODE") || 'unicode';
+    window.toggleEncodingMode = window.toggleEncodingMode || function(e) {
+      if (window.setEncodingMode) {
+        const next = (window.currentEncodingMode === 'ansi') ? 'unicode' : 'ansi';
+        window.setEncodingMode(next, false);
+      }
+    };
   </script>
 </head>
 <body class="p-1.5 w-full h-full flex items-center justify-center">
@@ -388,45 +396,51 @@
   <!-- ===================================================================== -->
   <!-- 1. COLLAPSED MODE (FLOATING PILL - DRAGGABLE & RESIZABLE)             -->
   <!-- ===================================================================== -->
-  <div id="collapsed-view" data-tauri-drag-region
+  <div id="collapsed-view"
        class="relative w-full h-full min-w-[200px] min-h-[48px] bg-white/95 backdrop-blur-md rounded-full pill-shadow border border-slate-100 flex items-center justify-between pl-2 pr-3 cursor-move">
     
     <!-- Left Mic Button -->
-    <button id="pill-mic-btn" onclick="handleMicToggle()" title="Voice Typing Idle - Click to Start (Alt+V)"
+    <button id="pill-mic-btn" type="button" data-tauri-drag-region="false" onclick="handleMicToggle()" onmousedown="event.stopPropagation()" onpointerdown="event.stopPropagation()" title="Voice Typing Idle - Click to Start (Alt+V)"
             class="w-[38px] h-[38px] rounded-full mic-btn-idle text-white flex items-center justify-center shrink-0 transition-all duration-200 active:scale-95 cursor-pointer">
       <i data-lucide="mic" class="w-[18px] h-[18px] stroke-[2] opacity-90"></i>
     </button>
 
     <!-- Status Text -->
     <span id="pill-status" data-tauri-drag-region
-          class="text-[13.5px] font-medium text-[#334155] tracking-[-0.01em] ml-2.5 mr-auto select-none pointer-events-none truncate">
+          class="text-[13.5px] font-medium text-[#334155] tracking-[-0.01em] ml-2.5 mr-auto select-none pointer-events-none truncate cursor-move">
       Press to start ...
     </span>
 
     <!-- Encoding Mode Pill Badge (UNI / ANSI) -->
-    <span id="pill-mode-badge" onclick="toggleEncodingMode()" title="Encoding Mode (Click to switch)"
-          class="px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 shrink-0 cursor-pointer mr-1.5 select-none transition">
+    <button id="pill-mode-badge" type="button"
+            data-tauri-drag-region="false"
+            onclick="toggleEncodingMode(event)"
+            onpointerup="toggleEncodingMode(event)"
+            onmousedown="event.stopPropagation()"
+            onpointerdown="event.stopPropagation()"
+            title="Encoding Mode (Click to switch: Unicode ↔ ANSI/Bijoy)"
+            class="px-2 py-0.5 min-h-[22px] rounded text-[10.5px] font-bold tracking-wider uppercase bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 active:scale-95 shrink-0 cursor-pointer mr-1.5 select-none transition relative z-30 outline-none">
       UNI
-    </span>
+    </button>
 
     <!-- Multi-Tone Waveform Bars -->
-    <div id="pill-waveform" data-tauri-drag-region class="flex items-center gap-[2.5px] h-6 mr-2 pointer-events-none shrink-0"></div>
+    <div id="pill-waveform" data-tauri-drag-region class="flex items-center gap-[2.5px] h-6 mr-2 pointer-events-none shrink-0 cursor-move"></div>
 
     <!-- Expand Mode Chevron Button -->
-    <button onclick="switchMode(true)" title="Expand VoiceFlow"
-            class="w-6 h-6 rounded-full hover:bg-slate-100 text-[#64748B] hover:text-[#1E293B] flex items-center justify-center transition shrink-0 mr-1">
+    <button type="button" data-tauri-drag-region="false" onclick="switchMode(true)" onmousedown="event.stopPropagation()" onpointerdown="event.stopPropagation()" title="Expand VoiceFlow"
+            class="w-6 h-6 rounded-full hover:bg-slate-100 text-[#64748B] hover:text-[#1E293B] flex items-center justify-center transition shrink-0 mr-1 cursor-pointer">
       <i data-lucide="chevron-down" class="w-4 h-4 stroke-[2]"></i>
     </button>
 
     <!-- Pill Resize Grip -->
-    <div class="vf-resize-handle" title="Drag to resize" onmousedown="initWindowResize(event)">
+    <div class="vf-resize-handle" data-tauri-drag-region="false" title="Drag to resize" onmousedown="initWindowResize(event)">
       <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
         <circle cx="7" cy="1" r="1"/>
         <circle cx="7" cy="4" r="1"/>
         <circle cx="4" cy="4" r="1"/>
         <circle cx="7" cy="7" r="1"/>
         <circle cx="4" cy="7" r="1"/>
-        <circle cx="1" cy="7" r="1"/>
+        <circle cx="1" cy="1" r="1"/>
       </svg>
     </div>
   </div>
@@ -453,15 +467,21 @@
         </span>
       </div>
       <div class="flex items-center gap-1 shrink-0">
-        <button id="panel-mode-badge" onclick="toggleEncodingMode()" title="Bangla Encoding Mode (Click to switch)"
-                class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/50 cursor-pointer transition shrink-0">
+        <button id="panel-mode-badge" type="button"
+                data-tauri-drag-region="false"
+                onclick="toggleEncodingMode(event)"
+                onpointerup="toggleEncodingMode(event)"
+                onmousedown="event.stopPropagation()"
+                onpointerdown="event.stopPropagation()"
+                title="Bangla Encoding Mode (Click to switch: Unicode ↔ ANSI/Bijoy)"
+                class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/50 hover:opacity-90 active:scale-95 cursor-pointer transition shrink-0 relative z-30 outline-none">
           Unicode
         </button>
-        <button onclick="toggleDarkMode()" title="Toggle Dark/Light Mode"
+        <button type="button" data-tauri-drag-region="false" onclick="toggleDarkMode()" onmousedown="event.stopPropagation()" onpointerdown="event.stopPropagation()" title="Toggle Dark/Light Mode"
                 class="w-7 h-7 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-[#64748B] hover:text-[#0F172A] dark:hover:text-slate-200 flex items-center justify-center transition shrink-0">
           <i id="theme-btn-icon" data-lucide="moon" class="w-[15px] h-[15px] stroke-[2]"></i>
         </button>
-        <button onclick="switchMode(false)" title="Collapse to floating pill"
+        <button type="button" data-tauri-drag-region="false" onclick="switchMode(false)" onmousedown="event.stopPropagation()" onpointerdown="event.stopPropagation()" title="Collapse to floating pill"
                 class="w-7 h-7 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-[#64748B] hover:text-[#0F172A] dark:hover:text-slate-200 flex items-center justify-center transition shrink-0">
           <i data-lucide="x" class="w-[17px] h-[17px] stroke-[2]"></i>
         </button>
@@ -564,6 +584,32 @@
                   class="w-full appearance-none bg-white border border-[#E2E8F0] rounded-[10px] pl-2.5 pr-7 py-1.5 text-[11.5px] text-[#1E293B] font-medium shadow-[0_1px_2px_rgba(0,0,0,0.03)] focus:outline-none focus:border-[#2E7D62]">
             <option value="unicode">Unicode (Avro/Web)</option>
             <option value="ansi">ANSI (Bijoy / SutonnyMJ)</option>
+          </select>
+          <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+        </div>
+      </div>
+
+      <!-- Recognition Language (Gemini / Web Speech) -->
+      <div class="flex items-center justify-between">
+        <span class="text-[#334155] font-medium flex items-center gap-1.5">
+          <i data-lucide="languages" class="w-3.5 h-3.5 text-sky-600"></i>
+          <span>Language</span>
+        </span>
+        <div class="relative w-[138px]">
+          <select id="language-select" onchange="onLanguageChange(this.value)"
+                  class="w-full appearance-none bg-white border border-[#E2E8F0] rounded-[10px] pl-2.5 pr-7 py-1.5 text-[11.5px] text-[#1E293B] font-medium shadow-[0_1px_2px_rgba(0,0,0,0.03)] focus:outline-none focus:border-[#2E7D62]">
+            <option value="auto">Auto-detect</option>
+            <option value="bn-BD" selected>Bangla (Bangladesh)</option>
+            <option value="bn-IN">Bangla (India)</option>
+            <option value="en-US">English (United States)</option>
+            <option value="en-IN">English (India)</option>
+            <option value="hi-IN">Hindi</option>
+            <option value="ne-NP">Nepali</option>
+            <option value="as-IN">Assamese</option>
+            <option value="or-IN">Odia</option>
+            <option value="ar-EG">Arabic (Egypt)</option>
+            <option value="es-419">Spanish</option>
+            <option value="ja-JP">Japanese</option>
           </select>
           <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
         </div>
@@ -756,7 +802,7 @@
       if (e.button !== 0) return; // Only left mouse button
 
       // Do NOT drag if clicking on interactive elements
-      if (e.target.closest("button, select, input, textarea, [contenteditable='true']")) {
+      if (e.target.closest("button, select, input, textarea, [contenteditable='true'], [data-tauri-drag-region='false'], #pill-mode-badge, #panel-mode-badge, .vf-resize-handle")) {
         return;
       }
 
@@ -914,7 +960,14 @@
     const voiceEngine = new VoiceEngine({
       apiKey: savedKey || '',
       model: 'gemini-3.5-transcribe-live',
-      language: document.getElementById('language-select')?.value || 'en-US',
+      // Default recognition language: Bangla (Bangladesh)
+      language: ((() => {
+        try {
+          const p = JSON.parse(localStorage.getItem("VF_USER_PREFERENCES") || "{}");
+          if (p.language) return p.language;
+        } catch (_) {}
+        return localStorage.getItem("VF_LANG") || 'bn-BD';
+      })()),
 
       onStatusChange: (status) => {
         if (status === 'Listening...') {
@@ -981,15 +1034,18 @@
           return; // Do NOT type the voice command itself!
         }
 
-        // Smart punctuation
+        // Smart punctuation (language-aware; auto-detect via Bengali script)
         let text = cleanFinal;
         const autoPunct = document.getElementById("toggle-punct")?.dataset.enabled === "true";
         if (autoPunct) {
-          const lang = document.getElementById("language-select")?.value || 'en-US';
-          if (lang.startsWith("bn")) {
+          const lang = document.getElementById("language-select")?.value || 'bn-BD';
+          const isBanglaLang = lang === 'auto' ? isBanglaText(text) : lang.startsWith("bn");
+          if (isBanglaLang) {
             if (!/[।!?]$/.test(text)) text += '।';
-          } else {
+          } else if (lang !== 'auto') {
             if (!/[.!?]$/.test(text)) text += '.';
+          } else if (!/[.!?।]$/.test(text)) {
+            text += '.';
           }
         }
 
@@ -1030,23 +1086,34 @@
     // STATE MANAGEMENT ENGINE
     // =========================================================================
     let currentEncodingMode = localStorage.getItem("VF_ENCODING_MODE") || 'unicode';
+    window.currentEncodingMode = currentEncodingMode;
 
-    function setEncodingMode(mode, fromVoice = false) {
-      const m = mode === 'ansi' ? 'ansi' : 'unicode';
+    function setEncodingMode(mode, fromRust = false) {
+      const m = (typeof mode === 'string' && mode.toLowerCase() === 'ansi') ? 'ansi' : 'unicode';
+
+      // If already in this mode and originated from Rust event, do not re-process
+      if (m === currentEncodingMode && fromRust) {
+        return;
+      }
+
       currentEncodingMode = m;
+      window.currentEncodingMode = m;
       localStorage.setItem("VF_ENCODING_MODE", m);
-      saveUserPreference('encodingMode', m);
+      if (typeof saveUserPreference === 'function') {
+        saveUserPreference('encodingMode', m);
+      }
 
       // 1. Update Collapsed Pill badge
       const pillBadge = document.getElementById("pill-mode-badge");
       if (pillBadge) {
         pillBadge.innerText = m === 'ansi' ? 'ANSI' : 'UNI';
         pillBadge.className = m === 'ansi'
-          ? "px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 shrink-0 cursor-pointer mr-1.5 select-none transition"
-          : "px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 shrink-0 cursor-pointer mr-1.5 select-none transition";
+          ? "px-2 py-0.5 min-h-[22px] rounded text-[10.5px] font-bold tracking-wider uppercase bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 active:scale-95 shrink-0 cursor-pointer mr-1.5 select-none transition relative z-30 outline-none"
+          : "px-2 py-0.5 min-h-[22px] rounded text-[10.5px] font-bold tracking-wider uppercase bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 active:scale-95 shrink-0 cursor-pointer mr-1.5 select-none transition relative z-30 outline-none";
         pillBadge.title = m === 'ansi'
-          ? "ANSI Mode (Bijoy/SutonnyMJ for Photoshop/Illustrator) - Click to switch"
-          : "Unicode Mode (Avro/Web/Word) - Click to switch";
+          ? "ANSI Mode (Bijoy / SutonnyMJ for Photoshop/Illustrator) - Click to switch"
+          : "Unicode Mode (Avro / Web / Word) - Click to switch";
+        pillBadge.setAttribute("data-tauri-drag-region", "false");
       }
 
       // 2. Update Expanded Panel header badge
@@ -1054,32 +1121,57 @@
       if (panelBadge) {
         panelBadge.innerText = m === 'ansi' ? 'ANSI' : 'Unicode';
         panelBadge.className = m === 'ansi'
-          ? "px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700/50 cursor-pointer transition shrink-0"
-          : "px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/50 cursor-pointer transition shrink-0";
+          ? "px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700/50 hover:opacity-90 active:scale-95 cursor-pointer transition shrink-0 relative z-30 outline-none"
+          : "px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/50 hover:opacity-90 active:scale-95 cursor-pointer transition shrink-0 relative z-30 outline-none";
+        panelBadge.title = m === 'ansi'
+          ? "ANSI Mode (Bijoy / SutonnyMJ for Photoshop/Illustrator) - Click to switch"
+          : "Unicode Mode (Avro / Web / Word) - Click to switch";
+        panelBadge.setAttribute("data-tauri-drag-region", "false");
       }
 
       // 3. Update Settings dropdown
       const encSelect = document.getElementById("encoding-select");
-      if (encSelect) encSelect.value = m;
+      if (encSelect && encSelect.value !== m) encSelect.value = m;
 
       if (window.playAudioCue) {
-        window.playAudioCue(m === 'ansi' ? 'start' : 'stop');
+        try { window.playAudioCue(m === 'ansi' ? 'start' : 'stop'); } catch (_) {}
       }
 
-      showToast(m === 'ansi' ? "Switched to ANSI (Bijoy / SutonnyMJ)" : "Switched to Unicode");
+      if (typeof showToast === 'function') {
+        showToast(m === 'ansi' ? "Switched to ANSI (Bijoy / SutonnyMJ)" : "Switched to Unicode");
+      }
 
-      if (tauriCore) {
+      // Only notify Rust if the change originated from the frontend UI, preventing echo loops
+      if (!fromRust && tauriCore) {
         tauriCore.invoke("set_encoding_mode", { mode: m }).catch(() => {});
       }
     }
     window.setEncodingMode = setEncodingMode;
-    window.toggleEncodingMode = function() {
-      setEncodingMode(currentEncodingMode === 'unicode' ? 'ansi' : 'unicode');
-    };
+
+    let lastToggleTime = 0;
+    function toggleEncodingMode(event) {
+      if (event) {
+        try {
+          if (event.preventDefault) event.preventDefault();
+          if (event.stopPropagation) event.stopPropagation();
+          if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+        } catch (_) {}
+      }
+      const now = Date.now();
+      if (now - lastToggleTime < 350) {
+        return;
+      }
+      lastToggleTime = now;
+
+      const current = window.currentEncodingMode || currentEncodingMode || 'unicode';
+      const nextMode = (current.toLowerCase() === 'ansi') ? 'unicode' : 'ansi';
+      setEncodingMode(nextMode, false);
+    }
+    window.toggleEncodingMode = toggleEncodingMode;
 
     const DEFAULT_CONFIG = {
       theme: 'light',
-      language: 'en-US',
+      language: 'bn-BD',
       voice: 'Jenny',
       speed: 1.0,
       soundFeedback: true,
@@ -1225,6 +1317,20 @@
       }
     };
 
+    // Recognition language handler — applies live to VoiceEngine & persists
+    window.onLanguageChange = function(lang) {
+      saveUserPreference('language', lang);
+      try {
+        voiceEngine.setLanguage(lang);
+      } catch (err) {
+        console.warn('setLanguage failed:', err);
+      }
+      const label = document.getElementById('language-select')?.selectedOptions?.[0]?.textContent || lang;
+      showToast(lang === 'auto'
+        ? "Language: Auto-detect"
+        : `Language: ${label}`);
+    };
+
     window.toggleSwitch = function(el) {
       const enabled = el.dataset.enabled !== "true";
       el.dataset.enabled = enabled ? "true" : "false";
@@ -1261,9 +1367,9 @@
         if (icon) icon.setAttribute("data-lucide", "sun");
       }
 
-      // 2. Language
+      // 2. Language (default: Bangla Bangladesh)
       const langSel = document.getElementById("language-select");
-      if (langSel && prefs.language) langSel.value = prefs.language;
+      if (langSel) langSel.value = prefs.language || 'bn-BD';
 
       // 3. Voice
       const voiceSel = document.getElementById("voice-select");
@@ -1313,13 +1419,25 @@
       setEncodingMode(encMode);
 
       // 11. Change listeners to auto-save preferences
-      langSel?.addEventListener("change", (e) => saveUserPreference('language', e.target.value));
+      langSel?.addEventListener("change", (e) => window.onLanguageChange(e.target.value));
       voiceSel?.addEventListener("change", (e) => saveUserPreference('voice', e.target.value));
       transSel?.addEventListener("change", (e) => saveUserPreference('translateLang', e.target.value));
     }
 
     // Initialize Preferences safely
     applyUserPreferences();
+
+    // Explicit click & pointerup bindings for encoding mode buttons
+    const pillModeBadgeEl = document.getElementById("pill-mode-badge");
+    if (pillModeBadgeEl) {
+      pillModeBadgeEl.addEventListener("click", toggleEncodingMode);
+      pillModeBadgeEl.addEventListener("pointerup", toggleEncodingMode);
+    }
+    const panelModeBadgeEl = document.getElementById("panel-mode-badge");
+    if (panelModeBadgeEl) {
+      panelModeBadgeEl.addEventListener("click", toggleEncodingMode);
+      panelModeBadgeEl.addEventListener("pointerup", toggleEncodingMode);
+    }
 
 
 
@@ -1340,7 +1458,7 @@
           voiceEngine.setApiKey(key);
           localStorage.setItem("VF_API_KEY", key);
         }
-        voiceEngine.setLanguage(document.getElementById("language-select")?.value || 'en-US');
+        voiceEngine.setLanguage(document.getElementById("language-select")?.value || 'bn-BD');
         voiceEngine.start().catch((err) => {
           console.warn("voiceEngine start error:", err);
           updateMicState('idle');
@@ -1635,11 +1753,15 @@
         window.handleMicToggle();
       });
 
-      // System Tray Encoding Mode Listener
+      // System Tray Encoding Mode Listener (Echo-safe)
       tauriEvent.listen("encoding-mode-changed", (event) => {
-        const mode = event.payload;
-        if (mode && mode !== currentEncodingMode) {
-          setEncodingMode(mode);
+        const raw = event?.payload;
+        const mode = typeof raw === 'string' ? raw : (raw?.mode || "");
+        if (mode) {
+          const normalized = mode.toLowerCase() === 'ansi' ? 'ansi' : 'unicode';
+          if (normalized !== currentEncodingMode) {
+            setEncodingMode(normalized, true); // fromRust = true, prevents echo loop
+          }
         }
       });
 

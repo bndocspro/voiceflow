@@ -12,7 +12,8 @@ export class VoiceEngine {
   constructor(options = {}) {
     this.apiKey = options.apiKey || '';
     this.model = options.model || 'gemini-3.5-transcribe-live';
-    this.language = options.language || 'en-US';
+    // Recognition language: BCP-47 code (bangla default) or 'auto' for auto-detect
+    this.language = options.language || 'bn-BD';
     this.mode = options.mode || 'smart'; // 'smart' | 'verbatim'
     this.autoPunctuation = options.autoPunctuation ?? true;
 
@@ -46,7 +47,8 @@ export class VoiceEngine {
 
   setLanguage(lang) {
     this.language = lang;
-    if (this.speechRecognition) {
+    if (this.speechRecognition && lang && lang !== 'auto') {
+      // Web Speech API has no true auto-detect; keep current recognizer lang for 'auto'
       this.speechRecognition.lang = lang;
     }
   }
@@ -88,6 +90,10 @@ export class VoiceEngine {
       this.startVisualizer();
 
       // Send initial Gemini Live Setup frame
+      // Language: empty languageCodes = automatic detection, otherwise explicit hint
+      const languageCodes = (this.language && this.language !== 'auto')
+        ? [this.language]
+        : [];
       const setupMessage = {
         setup: {
           model: `models/${this.model}`,
@@ -98,7 +104,8 @@ export class VoiceEngine {
             }
           },
           inputAudioTranscription: {
-            mode: this.mode
+            mode: (this.mode === 'verbatim' ? 'VERBATIM' : 'SMART'),
+            languageCodes
           }
         }
       };
@@ -164,7 +171,8 @@ export class VoiceEngine {
     this.speechRecognition = new SpeechRecognition();
     this.speechRecognition.continuous = true;
     this.speechRecognition.interimResults = true;
-    this.speechRecognition.lang = this.language;
+    // Web Speech API needs a concrete BCP-47 code (no true auto-detect)
+    this.speechRecognition.lang = (this.language && this.language !== 'auto') ? this.language : 'en-US';
 
     this.speechRecognition.onstart = () => {
       this.isListening = true;
