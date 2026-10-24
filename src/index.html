@@ -794,6 +794,19 @@
     window.showToast = showToast;
 
     // =========================================================================
+    // LIVE CAPTION TOAST (floating near the mouse cursor while dictating)
+    // =========================================================================
+    function liveToastShow(reAnchor) {
+      if (tauriCore) tauriCore.invoke("show_live_toast", { anchor: Boolean(reAnchor) }).catch(() => {});
+    }
+    function liveToastHide() {
+      if (tauriCore) tauriCore.invoke("hide_live_toast").catch(() => {});
+    }
+    function liveToastUpdate(kind, text) {
+      if (tauriCore) tauriCore.invoke("update_live_toast", { kind: kind, text: text }).catch(() => {});
+    }
+
+    // =========================================================================
     // UNIVERSAL FLAWLESS WINDOW DRAG FIX
     // =========================================================================
     // Intercepts mousedown on the floating pill or the top header and calls
@@ -950,6 +963,18 @@
         resetWaveform();
       }
 
+      // Live caption toast follows the mic lifecycle:
+      // session start anchors it near the mouse cursor, idle hides it
+      if (state === "connecting") {
+        liveToastShow(true);
+        liveToastUpdate("status", "Connecting…");
+      } else if (state === "listening") {
+        liveToastShow(false);
+        liveToastUpdate("status", "Listening…");
+      } else {
+        liveToastHide();
+      }
+
       if (window.lucide) {
         try { window.lucide.createIcons(); } catch (_) {}
       }
@@ -985,6 +1010,11 @@
 
       onInterimText: async (interim) => {
         if (!interim || !interim.trim()) return;
+
+        // 0. Stream live writing into the floating cursor toast
+        // (re-show in case it auto-hid after the previous phrase)
+        liveToastShow(false);
+        liveToastUpdate("interim", interim);
 
         // 1. Update VoiceFlow UI transcript box with real-time italic preview
         const box = document.getElementById("transcript-box");
@@ -1027,10 +1057,12 @@
 
         if (ansiCommands.some(cmd => normalized.includes(cmd))) {
           window.setEncodingMode('ansi', true);
+          liveToastUpdate("final", "ANSI (Bijoy) mode on");
           return; // Do NOT type the voice command itself!
         }
         if (unicodeCommands.some(cmd => normalized.includes(cmd))) {
           window.setEncodingMode('unicode', true);
+          liveToastUpdate("final", "Unicode mode on");
           return; // Do NOT type the voice command itself!
         }
 
@@ -1053,6 +1085,9 @@
         transcriptText += (transcriptText ? ' ' : '') + text;
         renderTranscript();
         addHistoryItem(text);
+
+        // 1.5 Confirm the phrase on the live cursor toast (fades itself out)
+        liveToastUpdate("final", text);
 
         // 2. Clean, atomic OS Cursor Typing into active target window
         const directType = document.getElementById("toggle-direct")?.dataset.enabled === "true";

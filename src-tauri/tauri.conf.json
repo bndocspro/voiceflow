@@ -20,6 +20,21 @@
         "shadow": false,
         "resizable": true,
         "center": true
+      },
+      {
+        "title": "VoiceFlow Live Caption",
+        "label": "live-toast",
+        "url": "liveToast.html",
+        "width": 380,
+        "height": 84,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "shadow": false,
+        "resizable": false,
+        "skipTaskbar": true,
+        "visible": false,
+        "focus": false
       }
     ],
     "security": {
